@@ -1,5 +1,6 @@
-var { validationResult } = require('express-validator');
-var authDao = require('../dao/auth_dao')
+const { validationResult } = require('express-validator');
+const authDao = require('../dao/auth_dao');
+const { sendErrorResponse, authenticationResponse } = require('../util/common_http');
 
 _username = {
     in : ['body'],
@@ -54,26 +55,27 @@ exports.login = async (req, res, next) => {
         return res.status(400).send(result);
     } else {
         try {
-            const user = await authDao.login(req.body.username);
-            if(user){
-                res.send(user);
-            } else {
-                res.send({
-                    message: `user with email '${req.body.username}' not found`
-                });            
-            }
-        } catch (err) {
-            res.send({error: err})
+            let user = await authDao.getAuthUser(req.body.username);
+
+            authenticationResponse(req.body.username, req.body.password, user, res);
+        } catch (e) {
+            sendErrorResponse(e, res);
         }
     }
 }
 
-exports.register = (req, res, next) => {
-    const result = validationResult(req);
+exports.register = async (req, res, next) => {
+    let result = validationResult(req);
     if(!result.isEmpty()){
         return res.status(400).send(result);
     } else {
-        res.send(authDao.login(req.body.email));
+        try {
+            let dbResult = await authDao.register(req.body);
+            let user = await authDao.getAuthUser(req.body.email);
+            authenticationResponse(req.body.email, req.body.password, user, res);     
+        } catch (e) {
+            sendErrorResponse(e, res);
+        }
     }
 }
 
