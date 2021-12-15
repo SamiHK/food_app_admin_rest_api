@@ -16,6 +16,8 @@ module.exports.authenticationResponse = (emailOrUsername, password, user, res) =
                 id: user.id,
                 email: user.email,
                 username: user.username,
+                profile_picture: user.profile_picture,
+                enabled: user.enabled,
                 last_login: user.last_login,
                 token:  jwtUtil.generateToken({
                     email: user.email

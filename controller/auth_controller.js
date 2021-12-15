@@ -56,7 +56,6 @@ exports.login = async (req, res, next) => {
     } else {
         try {
             let user = await authDao.getAuthUser(req.body.username);
-
             authenticationResponse(req.body.username, req.body.password, user, res);
         } catch (e) {
             sendErrorResponse(e, res);
