@@ -9,22 +9,30 @@ const dataSource = {
     namedPlaceholders: true
 };
 
-function getConnection() {
-    return mysql.createConnection(dataSource).catch(e => {
-        if(e) throw e;
-    })
+var connection;
+
+async function getConnection(){
+    if(!!connection){
+        connection = await (mysql.createPool(dataSource)).getConnection().catch(e => {
+            console.error(e);
+            throw e;
+        });
+    }
+    return connection;
 }
 
-module.exports.query = async (sql, params) => {
-    let con = await getConnection();
-    // console.log(con);
-    let result = await con.query(sql, params);
-    return result[0];
+module.exports.callQuery = async (sql, params) => {
+    let dbCon = await getConnection();
+    let result = dbCon.query(sql, params);
+    return result[0]; // return only result data/rows, 
 };
 
 
 module.exports.querySingleResult = async (sql, params) => {
-    var result = await this.query(sql, params);
-    // console.log(`result: ${result}`);
-    return result[0];
+    var result = await this.callQuery(sql, params);
+    if(result && result.length > 1) {
+        console.log(`size: ${result.length}, result: ${result}`)
+        throw Error('more than 1 records found');
+    }
+    return result[0]; // return first result
 }

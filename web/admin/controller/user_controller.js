@@ -1,4 +1,4 @@
-const userDao = require('../dao/user_dao');
+const userDao = require('../common/dao/user_dao');
 
 
 exports.getUsers = async (req, res) => {
