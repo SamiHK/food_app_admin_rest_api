@@ -17,6 +17,8 @@ async function getConnection(){
             console.error(e);
             throw e;
         });
+        connection.config.namedPlaceholders = true;
+        connection.config.nestTables = true;
     }
     return connection;
 }
