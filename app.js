@@ -1,15 +1,25 @@
 require('dotenv').config()
 var createError = require('http-errors');
 var express = require('express');
+var cors = require('cors');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
 // var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var authRouter = require('./routes/auth');
+// var usersRouter = require('./routes/users');
+var authRoutes = require('./web/common/route/auth');
+var profileRoutes = require('./web/common/route/profile');
+var userRoutes = require('./web/common/route/users');
+var adminManagerRoutes = require('./web/admin/route/manager');
+var adminBranchRoutes = require('./web/admin/route/branch');
 
 var app = express();
+var corsOptions = {
+  origin: '*',
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}
+app.use(cors(corsOptions));
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -22,8 +32,12 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // app.use('/', indexRouter);
-app.use('/users', usersRouter);
-app.use('/auth', authRouter);
+// app.use('/users', usersRouter);
+app.use('/auth', authRoutes);
+app.use('/profile', profileRoutes);
+app.use('/user', userRoutes);
+app.use('/admin/manager', adminManagerRoutes);
+app.use('/admin/branch', adminBranchRoutes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

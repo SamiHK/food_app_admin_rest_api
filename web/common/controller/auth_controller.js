@@ -1,57 +1,14 @@
+const logger = require('../../../logger');
 const { validationResult } = require('express-validator');
 const authDao = require('../dao/auth_dao');
-const { sendErrorResponse, authenticationResponse } = require('../util/common_http');
+const userDao = require('../dao/user_dao');
+const { sendErrorResponse, authenticationResponse, notFound, emailNotFound } = require('../util/http_util');
+const { sendEmail } = require('../../email');
+const { v4: uuidv4 } = require('uuid');
 
-_username = {
-    in : ['body'],
-    notEmpty: {
-        errorMessage: 'Username or email is required',
-    }
-}
-
-_email = {
-    in : ['body'],
-    isEmail: {
-        errorMessage: 'Invalid email ',
-    }
-}
-
-_password = {
-    in : ['body'],
-    errorMessage: 'Password is required',
-    notEmpty: {}
-}
-
-_confirm_password = {
-    in : ['body'],
-    notEmpty: {
-        errorMessage : 'Confirm password is required'
-    },
-    custom: {
-        options: (value, {req}) => {
-            if( value != undefined && value != null && value != '' && value !== req.body.password ){
-                throw new Error('Password confirmation is incorrect');
-            } 
-            return true;
-        }
-    }
-}
-
-exports.userLoginSchema = {
-    username: _username,
-    password: _password
-}
-
-exports.userRegisterSchema = {
-    email: _email,
-    password: _password,
-    confirm_password: _confirm_password,
-}
-
-
-exports.login = async (req, res, next) => {
+exports.login = async (req, res) => {
     const result = validationResult(req);
-    if(!result.isEmpty()){
+    if (!result.isEmpty()) {
         return res.status(400).send(result);
     } else {
         try {
@@ -63,25 +20,102 @@ exports.login = async (req, res, next) => {
     }
 }
 
-exports.register = async (req, res, next) => {
-    let result = validationResult(req);
-    if(!result.isEmpty()){
+exports.forgetPassword = async (req, res) => {
+    const result = validationResult(req);
+    if (!result.isEmpty()) {
         return res.status(400).send(result);
     } else {
         try {
-            let dbResult = await authDao.register(req.body);
             let user = await authDao.getAuthUser(req.body.email);
-            authenticationResponse(req.body.email, req.body.password, user, res);     
+            if (user) {
+                let token = uuidv4();
+                await authDao.forgetPassword(user.id, token);
+                sendEmail(`${process.env.APP_NAME} - Reset Password link`, user.email, `click this URL ${process.env.DOMAIN}resetPassword/${token} to reset your password.`);
+                res.status(200).send();
+            } else {
+                emailNotFound(req.body.email, res);
+            }
+            // authenticationResponse(req.body.username, req.body.password, user, res);
         } catch (e) {
             sendErrorResponse(e, res);
         }
     }
 }
 
-exports.forgetPassword = (req, res, next) => {
-    res.send(req.body);
+exports.updatePassword = async (req, res) => {
+    let userId = req.params.id;
+    logger.info(`id: ${userId}`);
+    const result = validationResult(req);
+    if (!result.isEmpty()) {
+        return res.status(400).send(result);
+    } else {
+        try {
+            let user = await userDao.getUserById(userId);
+            if (user) {
+                await authDao.updatePassword(userId, req.body.password);
+                sendEmail(`${process.env.APP_NAME} - Password Updated`, user.email, 'Your account password has been updated.');
+                res.status(200).send();
+            } else {
+                sendErrorResponse(Error(`User not found by id: ${userId}`), res);
+            }
+        } catch (e) {
+            sendErrorResponse(e, res);
+        }
+    }
 }
 
-exports.resetPassword = (req, res, next) => {
-    res.send(req.body);
+
+exports.resetPassword = async (req, res) => {
+    let token = req.params.token;
+    logger.info(`token: ${token}`);
+    const result = validationResult(req);
+    if (!result.isEmpty()) {
+        return res.status(400).send(result);
+    } else {
+        try {
+            let user = await userDao.getUserByResetPasswordToken(token);
+            if (user) {
+                await authDao.updatePassword(user.id, req.body.password);
+                sendEmail(`${process.env.APP_NAME} - Password Updated`, user.email, 'Your account password has been updated');
+                res.status(200).send();
+            } else {
+                notFound({
+                    type: 'INVALID_OR_EXPIRED',
+                    code: 'INVALID_OR_EXPIRED',
+                    message: 'Reset password link either invalid or expired'
+                }, res);
+            }
+        } catch (e) {
+            sendErrorResponse(e, res);
+        }
+    }
+}
+
+exports.enabled = async (req, res) => {
+    let id = req.params.id;
+    let enabled = req.query.enabled == 'true';
+    logger.info(`id: ${id}`);
+    try {
+        let user = await userDao.getUserById(id);
+        if (user) {
+            let response = await authDao.enabled(id, enabled);
+            if(response && response.length == 2){
+                if(enabled)
+                    sendEmail(`${process.env.APP_NAME} - Account Activated`, user.email, 'Your account has been activated. Login now');
+                else 
+                    sendEmail(`${process.env.APP_NAME} - Account Deactivated`, user.email, 'Your account has been deactivated. contact Admin');
+                res.status(200).send(response[1][0]);
+            } else {
+                sendErrorResponse(new Error('Something gone wrong while updating enable status of user'));
+            }
+        } else {
+            notFound({
+                type: 'INVALID_OR_EXPIRED',
+                code: 'INVALID_OR_EXPIRED',
+                message: 'Reset password link either invalid or expired'
+            }, res);
+        }
+    } catch (e) {
+        sendErrorResponse(e, res);
+    }
 }

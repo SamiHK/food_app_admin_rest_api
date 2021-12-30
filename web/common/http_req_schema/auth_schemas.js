@@ -1,7 +1,3 @@
-const { validationResult } = require('express-validator');
-const authDao = require('../dao/auth_dao');
-const { sendErrorResponse, authenticationResponse } = require('../util/common_http');
-
 _username = {
     in : ['body'],
     notEmpty: {
@@ -48,25 +44,15 @@ exports.userRegisterSchema = {
     confirm_password: _confirm_password,
 }
 
-
-exports.login = async (req, res, next) => {
-    const result = validationResult(req);
-    if(!result.isEmpty()){
-        return res.status(400).send(result);
-    } else {
-        try {
-            let user = await authDao.getAuthUser(req.body.username);
-            authenticationResponse(req.body.username, req.body.password, user, res);
-        } catch (e) {
-            sendErrorResponse(e, res);
-        }
-    }
+exports.managerRegisterSchema = {
+    username: _username
 }
 
-exports.forgetPassword = (req, res, next) => {
-    res.send(req.body);
+exports.emailSchema = {
+    email: _email
 }
 
-exports.resetPassword = (req, res, next) => {
-    res.send(req.body);
+exports.updatePasswordSchema = {
+    password: _password,
+    confirmPassword: _confirm_password,
 }

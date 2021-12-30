@@ -1,13 +1,9 @@
-var express = require('express');
-var router = express.Router();
-var userController = require('../../controller/user_controller')
+var router = require('express').Router();
+const { checkSchema } = require('express-validator');
+const { updateEmail } = require('../controller/user_controller');
+const { emailSchema } = require('../http_req_schema/auth_schemas');
 
-// /* GET users listing. */
-// router.get('/', function(req, res, next) {
-//   res.send(auth.login('g1'));
-// });
+router.post('/:id/email', checkSchema(emailSchema), updateEmail);
 
-router.get('/', userController.getUsers)
-router.get('/:usernameOrEmail', userController.getUser)
 
 module.exports = router;
