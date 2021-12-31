@@ -101,7 +101,8 @@ exports.available = async (pageNumber = 0, pageSize = 100, orderByProp='username
     let sql = `select count(u.id) as total
     from auth_user u 
     join auth_user_role ur on ur.user_id = u.id and ur.role_id = 'MANAGER'
-    where u.id not in (select b.manager_id from res_branch b where b.manager_id is not null) `;
+    where u.enabled = 1 
+    and u.id not in (select b.manager_id from res_branch b where b.manager_id is not null) `;
     let page = await querySingleResult(sql);
     page.number = pageNumber;
     page.size = pageSize;
@@ -118,7 +119,8 @@ exports.available = async (pageNumber = 0, pageSize = 100, orderByProp='username
     from auth_user u 
     join auth_user_role ur on ur.user_id = u.id and ur.role_id = 'MANAGER' 
     left join auth_user_profile up on up.id = u.id 
-    where u.id not in (select b.manager_id from res_branch b where b.manager_id is not null)
+    where u.enabled = 1 
+    and u.id not in (select b.manager_id from res_branch b where b.manager_id is not null)
     order by ${orderByProp} ${order} 
     limit :offset, :length `;
     page.items = await query(sql, params);

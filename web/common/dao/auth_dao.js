@@ -1,7 +1,6 @@
 var { query, querySingleResult, mulitpleQuery } = require('../../db');
 var bcrypt = require('bcryptjs');
 var { v4: uuidv4 } = require('uuid');
-const { toBinaryUUID } = require('binary-uuid');
 
 
 /**
@@ -29,7 +28,7 @@ exports.getAuthUser = async (username) => {
  */
 exports.forgetPassword = (id, token) => {
     let params = [token, id];
-    let sql = "update auth_user set reset_password_token = ? where id = UUID_TO_BIN(?) ";
+    let sql = "update auth_user set reset_password_token = UUID_TO_BIN(?) where id = UUID_TO_BIN(?) ";
     return query(sql, params);
 }
 /**
@@ -86,17 +85,6 @@ exports.enabled = async (id, enabled) => {
     };
     let sql = `update auth_user set enabled = :enabled where id = UUID_TO_BIN(:id);
     select u.enabled from auth_user u where u.id = UUID_TO_BIN(:id)`;
-    return query(sql, params);
-}
-
-
-/**
- * 
- * @param { UUID } id 
- */
-exports.emailVerified = async (id) => {
-    let params = [toBinaryUUID(id)];
-    let sql = `update auth_user set is_email_verified = true where id = ?`;
     return query(sql, params);
 }
 

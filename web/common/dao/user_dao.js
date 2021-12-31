@@ -5,13 +5,28 @@ var { query, querySingleResult } = require('../../db');
  * @param { UUID } id 
  * @returns { String } email
  */
- exports.updateEmail = async (id, email) => {
+ exports.updateEmail = async (id, email, emailVerifyToken) => {
     let params = {
         id: id,
-        email: email
+        email: email,
+        emailVerifyToken: emailVerifyToken
     };
-    let sql = `update auth_user set email = :email, is_email_verified = false where id = UUID_TO_BIN(:id);
+    let sql = `update auth_user set email = :email,
+    email_verify_token = UUID_TO_BIN(:emailVerifyToken),
+    is_email_verified = false where id = UUID_TO_BIN(:id);
     select u.email from auth_user u where u.email = :email and id = UUID_TO_BIN(:id)`;
+    return query(sql, params);
+}
+
+exports.emailVerified = async (id, emailVerifyToken) => {
+    let params = {
+        id: id,
+        emailVerifyToken: emailVerifyToken
+    };
+    let sql = `update auth_user set email_verify_token = null,
+    is_email_verified = 1 
+    where id = UUID_TO_BIN(:id) and email_verify_token = UUID_TO_BIN(:emailVerifyToken);
+    select u.is_email_verified as isEmailVerified from auth_user u where id = UUID_TO_BIN(:id)`;
     return query(sql, params);
 }
 
@@ -72,12 +87,22 @@ exports.getUserById = async (id) => {
     return user;
 }
 
+exports.getUserByEmailVerifyToken = async (token) => {
+    let params = [token];
+    let sql = `select BIN_TO_UUID(u.id) id, u.username, u.email, u.is_email_verified, u.last_login, u.enabled, ur.role_id
+    from auth_user u
+    left join auth_user_role ur on ur.user_id = u.id
+    where u.email_verify_token = UUID_TO_BIN(?) `;
+    let user = await querySingleResult(sql, params);
+    return user;
+}
+
 exports.getUserByResetPasswordToken = async (id) => {
     let params = [id];
     let sql = `select BIN_TO_UUID(u.id) as id, u.username, u.email, u.is_email_verified, u.last_login, u.enabled, ur.role_id
     from auth_user u
     left join auth_user_role ur on ur.user_id = u.id
-    where u.reset_password_token = ?`;
+    where u.reset_password_token = UUID_TO_BIN(?)`;
     let user = await querySingleResult(sql, params);
     return user;
 }

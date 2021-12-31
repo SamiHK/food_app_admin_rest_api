@@ -11,5 +11,5 @@ var router = express.Router();
 
 // router.get('/', userController.getUsers)
 // router.get('/:usernameOrEmail', userController.getUser)
-router.post('/:id/email', checkSchema(emailSchema), updateEmail)
+// router.post('/:id/email', checkSchema(emailSchema), updateEmail)
 module.exports = router;

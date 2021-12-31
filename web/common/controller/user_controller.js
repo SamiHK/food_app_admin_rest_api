@@ -2,7 +2,8 @@ const { validationResult } = require('express-validator');
 const { sendEmail } = require('../../email');
 const { sendErrorResponse } = require('../util/http_util');
 const logger = require('../../../logger');
-const { updateEmail, getUserById, getUsers, getUser } = require('../dao/user_dao');
+const { updateEmail, getUserById, getUsers, getUser, getUserByEmailVerifyToken, emailVerified } = require('../dao/user_dao');
+const {v4: uuidv4} = require('uuid');
 
 
 exports.updateEmail = async (req, res) => {
@@ -15,8 +16,13 @@ exports.updateEmail = async (req, res) => {
         try {
             let user = await getUserById(userId);
             if(user){
-                let response = await updateEmail(userId, req.body.email);
-                sendEmail('Email Updated', user.email, 'Your email has been updated. Kindly contact Admin');
+                let newEmail = req.body.email;
+                let emailVerifyToken = uuidv4();
+                let response = await updateEmail(userId, newEmail, emailVerifyToken);
+                sendEmail(`${process.env.APP_NAME} - Email Changed`, user.email, 
+                    `Your email has been updated to ${newEmail}. Kindly contact Admin`);
+                sendEmail(`${process.env.APP_NAME} - Verify your email`, newEmail, 
+                    `Verify your email by visiting the following URL ${process.env.DOMAIN}verifyEmail/${emailVerifyToken}.`);
                 if(response && response.length == 2)
                     res.status(200).send(response[1][0]);
                 else 
@@ -32,6 +38,27 @@ exports.updateEmail = async (req, res) => {
     }
 }
 
+exports.verifyEmail = async (req, res) => {
+    const token = req.params.token;
+    logger.info(`emailVerifyToken: ${token}`);
+    try {
+        let user = await getUserByEmailVerifyToken(token);
+        if(user){
+            let response = await emailVerified(user.id, token);
+            sendEmail(`${process.env.APP_NAME} - Email Verified`, user.email, 
+                `Your email has been Verified`);
+            if(response && response.length == 2)
+                res.status(200).send(response[1][0]);
+            else 
+                sendErrorResponse(TypeError(`Something gone wrong`), res);
+
+        } else {
+            sendErrorResponse(TypeError(`Invalid Token: ${token}`), res);
+        }
+    } catch (e) {
+        sendErrorResponse(e, res);
+    }
+}
 
 exports.getUsers = async (req, res) => {
     try {
