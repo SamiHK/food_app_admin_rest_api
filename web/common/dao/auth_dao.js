@@ -11,7 +11,11 @@ var { v4: uuidv4 } = require('uuid');
 exports.getAuthUser = async (username) => {
     let params = { username: username};
     let sql = `select BIN_TO_UUID(u.id) as id, u.username, u.email, u.password, u.enabled, 
-    up.profile_picture as profilePicture, u.last_login as lastLogin, ur.role_id as role
+    up.profile_picture as profilePicture, u.last_login as lastLogin, ur.role_id as role,
+    (case 
+        when concat_ws(' ', up.first_name, up.last_name) != '' then concat_ws(' ', up.first_name, up.last_name)
+        when u.username is not null then u.username
+        else u.email end ) as fullName
     from auth_user u
     join auth_user_role ur on ur.user_id = u.id
     left join auth_user_profile up on up.id = u.id
@@ -74,7 +78,8 @@ exports.updatePassword = async (id, password) => {
         id: id,
         password: password
     };
-    let sql = `update auth_user set password = :password, reset_password_token = null, last_password_update = now() where id = UUID_TO_BIN(:id);`;
+    let sql = `update auth_user set password = :password, reset_password_token = null, last_password_update = now() where id = UUID_TO_BIN(:id);
+    select u.last_password_update as lastPasswordUpdate from auth_user u where u.id = UUID_TO_BIN(:id) `;
     return query(sql, params);
 }
 

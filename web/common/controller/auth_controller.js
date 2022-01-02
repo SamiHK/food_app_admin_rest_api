@@ -26,11 +26,11 @@ exports.forgetPassword = async (req, res) => {
         return res.status(400).send(result);
     } else {
         try {
-            let user = await authDao.getAuthUser(req.body.email);
+            let user = await authDao.getAuthUser(req.body.username);
             if (user) {
                 let token = uuidv4();
                 await authDao.forgetPassword(user.id, token);
-                sendEmail(`${process.env.APP_NAME} - Reset Password link`, user.email, `click this URL ${process.env.DOMAIN}resetPassword/${token} to reset your password.`);
+                sendEmail(`${process.env.APP_NAME} - Reset Password link`, user.email, `click this URL ${process.env.DOMAIN}reset/password/${token} to reset your password.`);
                 res.status(200).send();
             } else {
                 emailNotFound(req.body.email, res);
@@ -52,9 +52,13 @@ exports.updatePassword = async (req, res) => {
         try {
             let user = await userDao.getUserById(userId);
             if (user) {
-                await authDao.updatePassword(userId, req.body.password);
+                let result = await authDao.updatePassword(userId, req.body.password);
                 sendEmail(`${process.env.APP_NAME} - Password Updated`, user.email, 'Your account password has been updated.');
-                res.status(200).send();
+                if(result && result.length == 2)
+                    res.status(200).json(result[1][0]);
+                else 
+                    sendErrorResponse(Error(`Something gone wrong`), res);
+
             } else {
                 sendErrorResponse(Error(`User not found by id: ${userId}`), res);
             }

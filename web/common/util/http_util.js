@@ -6,22 +6,21 @@ const { updateLastLogin } = require('../dao/auth_dao')
 module.exports.notFound = (e, res) => {
     let errorMessage = {
         error: {
-            type: e.name,
+            name: e.name,
+            type: e.type,
             code: e.code,
             message: e.message
         }
     };
     logger.error(e);
-    res.status(200).send(errorMessage);
+    res.status(200).json(errorMessage);
 }
 
 module.exports.emailNotFound = (email, res) => {
     let errorMessage = {
-        error: {
-            type: 'INVALID_INPUT',
-            code: 'EMAIL_NOT_REGISTERED',
-            message: `This email '${email}' is not registered.`
-        }
+        type: 'INVALID_INPUT',
+        code: 'EMAIL_NOT_REGISTERED',
+        message: `This email '${email}' is not registered.`
     };
     // logger.error(e);
     // res.status(200).send(errorMessage);
@@ -51,6 +50,7 @@ module.exports.authenticationResponse = (emailOrUsername, password, user, res) =
                     id: user.id,
                     email: user.email,
                     username: user.username,
+                    fullName: user.fullName,
                     role: user.role,
                     enabled: user.enabled,
                     lastLogin: user.lastLogin,

@@ -75,3 +75,19 @@ exports.get = async (req, res) => {
         sendErrorResponse(e, res);
     }
 }
+
+exports.updateAddress = async (req, res) => {
+    const result = validationResult(req);
+    if(!result.isEmpty()){
+        return res.status(400).send(result);
+    } else {
+        try {
+            let id = req.params.id;
+            let address = req.body;
+            let resposne = await branchDao.updateAddress(id, address);
+            res.send(resposne);
+        } catch (e) {
+            sendErrorResponse(e, res);
+        }
+    }
+}

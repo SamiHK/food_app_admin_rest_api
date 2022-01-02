@@ -27,11 +27,11 @@ async function getConnection(){
     return connection;
 }
 
-module.exports.query = async (sql, params) => {
+exports.query = async (sql, params) => {
     return (await this.mulitpleQuery(sql, params))[0];
 };
 
-module.exports.mulitpleQuery = async (sql, params) => {
+exports.mulitpleQuery = async (sql, params) => {
     let con = await getConnection();
     let result = con.query(sql, params);
     con.release();
@@ -39,7 +39,7 @@ module.exports.mulitpleQuery = async (sql, params) => {
 };
 
 
-module.exports.querySingleResult = async (sql, params) => {
+exports.querySingleResult = async (sql, params) => {
     var result = await this.query(sql, params);
     if(result && result.length > 1) {
         logger.error(`size: ${result.length}, result: ${result}`)

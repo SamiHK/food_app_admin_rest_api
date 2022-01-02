@@ -19,6 +19,7 @@ exports.register = async (user) => {
 exports.get = async (id) => {
     let params = [id]
     let sql = `select BIN_TO_UUID(u.id) as id, u.username, u.email, u.enabled, u.last_login as lastLogin, 
+    u.last_password_update as lastPasswordUpdate,
     up.first_name as firstName, up.last_name as lastName, concat_ws(' ', up.first_name, up.last_name) as fullName, 
     up.profile_picture as profilePicture,
     ur.role_id as role,
@@ -114,7 +115,9 @@ exports.available = async (pageNumber = 0, pageSize = 100, orderByProp='username
     }
     sql = `select BIN_TO_UUID(u.id) as id, u.username as username, u.email as email,  
     up.first_name as firstName, up.last_name as lastName,
-    concat_ws(' ', up.first_name, up.last_name) as fullName,
+    (case when concat_ws(' ', up.first_name, up.last_name) != '' then concat_ws(' ', up.first_name, up.last_name)
+    when u.username is not null then u.username else u.email end)
+     as fullName,
     up.profile_picture as profilePicture
     from auth_user u 
     join auth_user_role ur on ur.user_id = u.id and ur.role_id = 'MANAGER' 

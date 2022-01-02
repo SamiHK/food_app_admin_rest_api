@@ -2,27 +2,25 @@ var { query, querySingleResult } = require('../../db');
 var {v4: uuidv4} = require('uuid');
 
 exports.filter = async (search, pageNumber = 1, pageSize = 10, orderByProp='name', order='asc') => {
-    let whereClause = ''
-    let params = {};
+    let whereClause = '';
+    let params = {
+        offset: pageNumber > 0 ? (pageNumber - 1) * pageSize : pageNumber,
+        length: pageSize,
+        column: orderByProp,
+        order: order
+    };
     if(search) {
         whereClause = `where b.name like :search 
         or b.code like :search 
         or b.address like :search`;
         params.search = `%${search}%`;
     }
-
-    let sql = `select count(b.id) as total
-    from res_branch b ${whereClause}`;
-    let page = await querySingleResult(sql, params);
-    page.number = pageNumber;
-    page.size = pageSize;
-    Object.assign(params, {
-        offset: pageNumber > 0 ? (pageNumber - 1) * pageSize : pageNumber,
-        length: pageSize,
-        column: orderByProp,
-        order: order
-    })
-    sql = `select BIN_TO_UUID(b.id) as id, b.name, b.code, b.address,
+    sql = `select count(b.id) as total
+    from res_branch b
+    left join auth_user u on u.id = b.manager_id
+    left join auth_user_profile up on up.id = b.manager_id
+    ${whereClause};
+    select BIN_TO_UUID(b.id) as id, b.name, b.code, b.address,
     BIN_TO_UUID(b.manager_id) as managerId, u.username as managerUsername, u.email as managerEmail, 
     (case
         when concat(up.first_name, ' ', up.last_name) is not null then concat(up.first_name, ' ', up.last_name)
@@ -35,35 +33,47 @@ exports.filter = async (search, pageNumber = 1, pageSize = 10, orderByProp='name
     ${whereClause}
     order by ${orderByProp} ${order} 
     limit :offset, :length `;
-    page.items = await query(sql, params);
+    let queryResult = await query(sql, params);
+    let page = {
+        number: pageNumber,
+        size: pageSize,
+        total: 0,
+        items: []
+    };
+    Object.assign(page, queryResult[0][0]);
+    Object.assign(page.items, queryResult[1]);
     return page;
 }
 
-exports.available = async (pageNumber = 1, pageSize = 100) => {
-    let sql = `select count(b.id) as total
-    from res_branch b 
-    where b.manager_id is null `;
-    let page = await querySingleResult(sql);
-    page.number = pageNumber;
-    page.size = pageSize;
-    params = {
+exports.available = async (search, pageNumber = 1, pageSize = 100) => {
+    let whereClause = '';
+    let params = {
         offset: pageNumber > 0 ? (pageNumber - 1) * pageSize : pageNumber,
         length: pageSize
+    };
+    if(search) {
+        whereClause = `and ( b.name like :search 
+        or b.code like :search 
+        or b.address like :search`;
+        params.search = `%${search}%)`;
     }
-    sql = `select BIN_TO_UUID(b.id) as id, b.name, b.code, b.address,
-    BIN_TO_UUID(b.manager_id) as managerId, u.username as managerUsername, u.email as managerEmail, 
-    (case
-        when concat(up.first_name, ' ', up.last_name) is not null then concat(up.first_name, ' ', up.last_name)
-        when u.username is not null then u.username
-        else u.email 
-    end) as managerFullName
+    sql = `select count(b.id) as total
     from res_branch b
-    left join auth_user u on u.id = b.manager_id
-    left join auth_user_profile up on u.id = b.manager_id
-    where b.manager_id is null
-    order by name
+    where b.manager_id is null ${whereClause};
+    select BIN_TO_UUID(b.id) as id, b.name, b.code
+    from res_branch b 
+    where b.manager_id is null ${whereClause}
+    order by b.name 
     limit :offset, :length `;
-    page.items = await query(sql, params);
+    let queryResult = await query(sql, params);
+    let page = {
+        number: pageNumber,
+        size: pageSize,
+        total: 0,
+        items: []
+    };
+    Object.assign(page, queryResult[0][0]);
+    Object.assign(page.items, queryResult[1]);
     return page;
 }
 
@@ -72,8 +82,7 @@ exports.save = async (branch) => {
     if(!branch.id){
         branch.id = uuidv4();
         sql = `insert into res_branch (id, name, code, address, city_id, manager_id) 
-        values (UUID_TO_BIN(:id), :name, :code, :address, :cityId, UUID_TO_BIN(:managerId));
-        `;
+        values (UUID_TO_BIN(:id), :name, :code, :address, :cityId, UUID_TO_BIN(:managerId));`;
     } else {
         sql = `update res_branch set
          name = :name,
@@ -91,7 +100,7 @@ exports.save = async (branch) => {
         cityId: branch.cityId,
         managerId: branch.managerId
     };
-    sql = sql.concat(` select * from res_branch where id = UUID_TO_BIN(:id)`)
+    sql = sql.concat(` select BIN_TO_UUID(b.id) as id, b.name, b.code, b.address from res_branch b where b.id = UUID_TO_BIN(:id)`)
     return query(sql, params);
 } 
 
@@ -140,4 +149,19 @@ exports.get = async (id) => {
     }
 
     return branch;
+}
+
+exports.updateAddress = async(id, address) => {
+    let sql = `update res_branch set address_line1= :line1,
+    city_id= :cityId,
+    lat_lng=: latLng
+    where id = UUID_TO_BIN(:id);
+    select * from res_branch where id = UUID_TO_BIN(:id)`;
+    let params = {
+        id: id,
+        line1: address.line1,
+        cityId: address.cityId,
+        latLng: address.latLng
+    }
+    return query(sql, params);
 }
