@@ -13,6 +13,7 @@ var profileRoutes = require('./web/common/route/profile');
 var userRoutes = require('./web/common/route/users');
 var adminManagerRoutes = require('./web/admin/route/manager');
 var adminBranchRoutes = require('./web/admin/route/branch');
+const { authorizedAdminJwtToken, authorizedJwtToken } = require('./web/common/util/http_util');
 
 var app = express();
 var corsOptions = {
@@ -35,10 +36,10 @@ const base_uri = '/api'
 // app.use('/', indexRouter);
 // app.use('/users', usersRouter);
 app.use(`${base_uri}/auth`, authRoutes);
-app.use(`${base_uri}/profile`, profileRoutes);
-app.use(`${base_uri}/user`, userRoutes);
-app.use(`${base_uri}/admin/manager`, adminManagerRoutes);
-app.use(`${base_uri}/admin/branch`, adminBranchRoutes);
+app.use(`${base_uri}/profile`, authorizedJwtToken, profileRoutes);
+app.use(`${base_uri}/user`, authorizedJwtToken, userRoutes);
+app.use(`${base_uri}/admin/manager`, authorizedAdminJwtToken, adminManagerRoutes);
+app.use(`${base_uri}/admin/branch`, authorizedAdminJwtToken, adminBranchRoutes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

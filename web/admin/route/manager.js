@@ -1,7 +1,7 @@
 var router = require('express').Router();
 var { checkSchema } = require('express-validator');
-var { updatePasswordSchema, emailSchema, managerRegisterSchema } = require('../../common/http_req_schema/auth_schemas')
-var authController = require('../../common/controller/auth_controller');
+var { managerRegisterSchema } = require('../../common/http_req_schema/auth_schemas');
+const { authorizedJwtToken } = require('../../common/util/http_util');
 var managerController = require('../controller/manager_controller');
 
 router.get('', managerController.filter);

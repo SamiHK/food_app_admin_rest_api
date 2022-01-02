@@ -29,7 +29,7 @@ exports.get = async (req, res) => {
     }
 }
 
-exports.filter = async (req, res) => {
+exports.filter = async (req, res, next) => {
     // const result = validationResult(req);
     try {
         let pageNumber = req.query.number;
