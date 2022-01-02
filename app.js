@@ -31,13 +31,14 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// app.use('/', (req, res) => res.render('index'));
+const base_uri = '/api'
+// app.use('/', indexRouter);
 // app.use('/users', usersRouter);
-app.use('/auth', authRoutes);
-app.use('/profile', profileRoutes);
-app.use('/user', userRoutes);
-app.use('/admin/manager', adminManagerRoutes);
-app.use('/admin/branch', adminBranchRoutes);
+app.use(`${base_uri}/auth`, authRoutes);
+app.use(`${base_uri}/profile`, profileRoutes);
+app.use(`${base_uri}/user`, userRoutes);
+app.use(`${base_uri}/admin/manager`, adminManagerRoutes);
+app.use(`${base_uri}/admin/branch`, adminBranchRoutes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
