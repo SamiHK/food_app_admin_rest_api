@@ -11,8 +11,7 @@ exports.filter = async (search, pageNumber = 1, pageSize = 10, orderByProp='name
     };
     if(search) {
         whereClause = `where b.name like :search 
-        or b.code like :search 
-        or b.address like :search`;
+        or b.code like :search `;
         params.search = `%${search}%`;
     }
     sql = `select count(b.id) as total
@@ -20,14 +19,16 @@ exports.filter = async (search, pageNumber = 1, pageSize = 10, orderByProp='name
     left join auth_user u on u.id = b.manager_id
     left join auth_user_profile up on up.id = b.manager_id
     ${whereClause};
-    select BIN_TO_UUID(b.id) as id, b.name, b.code, b.address,
+    select BIN_TO_UUID(b.id) as id, b.name, b.code, 
     BIN_TO_UUID(b.manager_id) as managerId, u.username as managerUsername, u.email as managerEmail, 
     (case
         when concat(up.first_name, ' ', up.last_name) is not null then concat(up.first_name, ' ', up.last_name)
         when u.username is not null then u.username
         else u.email 
-    end) as managerFullName
+    end) as managerFullName,
+    bl.formatted_address as branchAddress
     from res_branch b
+    left join res_branch_location bl on bl.id = b.id
     left join auth_user u on u.id = b.manager_id
     left join auth_user_profile up on up.id = b.manager_id
     ${whereClause}
@@ -53,8 +54,7 @@ exports.available = async (search, pageNumber = 1, pageSize = 100) => {
     };
     if(search) {
         whereClause = `and ( b.name like :search 
-        or b.code like :search 
-        or b.address like :search`;
+        or b.code like :search `;
         params.search = `%${search}%)`;
     }
     sql = `select count(b.id) as total
@@ -81,14 +81,12 @@ exports.save = async (branch) => {
     let sql = null;
     if(!branch.id){
         branch.id = uuidv4();
-        sql = `insert into res_branch (id, name, code, address, city_id, manager_id) 
-        values (UUID_TO_BIN(:id), :name, :code, :address, :cityId, UUID_TO_BIN(:managerId));`;
+        sql = `insert into res_branch (id, name, code, manager_id) 
+        values (UUID_TO_BIN(:id), :name, :code, UUID_TO_BIN(:managerId));`;
     } else {
         sql = `update res_branch set
          name = :name,
          code = :code,
-         address = :address,
-         city_id = :cityId,
          manager_id = UUID_TO_BIN(:managerId)
          where id = UUID_TO_BIN(:id);`;
     }
@@ -96,11 +94,9 @@ exports.save = async (branch) => {
         id: branch.id,
         name: branch.name,
         code: branch.code,
-        address: branch.address,
-        cityId: branch.cityId,
         managerId: branch.managerId
     };
-    sql = sql.concat(` select BIN_TO_UUID(b.id) as id, b.name, b.code, b.address from res_branch b where b.id = UUID_TO_BIN(:id)`)
+    sql = sql.concat(` select BIN_TO_UUID(b.id) as id, b.name, b.code from res_branch b where b.id = UUID_TO_BIN(:id)`)
     return query(sql, params);
 } 
 
@@ -116,17 +112,14 @@ exports.updateManager = async (id, managerId) => {
 
 exports.get = async (id) => {
     let params = [id];
-    let sql = `select BIN_TO_UUID(b.id) as id, b.name, b.code, b.active, b.city_id as cityId, 
-    b.address, BIN_TO_UUID(b.manager_id) as managerId, 
+    let sql = `select BIN_TO_UUID(b.id) as id, b.name, b.code, b.active, BIN_TO_UUID(b.manager_id) as managerId, 
     u.username, u.email, up.first_name as firstName, up.last_name as lastName,
     concat_ws(' ', up.first_name, up.last_name) as fullName,
-    c.*, s.*, ct.*
+    bl.*
     from res_branch b 
+    left join res_branch_location bl on bl.id = b.id
     left join auth_user u on u.id = b.manager_id
     left join auth_user_profile up on up.id = b.manager_id
-    left join addr_city c on c.id = b.city_id
-    left join addr_state s on s.id = c.state_id
-    left join addr_country ct on ct.id = s.country_id
     where b.id = UUID_TO_BIN(?)`;
     let options = {
         sql: sql,
@@ -142,26 +135,47 @@ exports.get = async (id) => {
         branch.manager.id = result[''].managerId;
         branch.manager.fullName = result[''].fullName;
     }
-    if(branch.cityId){
-        branch.city = result['c'];
-        branch.city.state = result['s'];
-        branch.city.state.country = result['ct'];
-    }
 
+    if(result['bl'].id){
+        branch.location = {
+            addressLine1: result['bl'].address_line_1,
+            formattedAddress: result['bl'].formatted_address,
+            latLng: {
+                lat: result['bl'].lat,
+                lng: result['bl'].lng,
+            }
+        }
+    }
     return branch;
 }
 
-exports.updateAddress = async(id, address) => {
-    let sql = `update res_branch set address_line1= :line1,
-    city_id= :cityId,
-    lat_lng=: latLng
-    where id = UUID_TO_BIN(:id);
-    select * from res_branch where id = UUID_TO_BIN(:id)`;
+exports.updateLocation = async(id, location) => {
+    let city = await querySingleResult(`select c.id 
+    from addr_city c 
+    join addr_state s on s.id = c.state_id and s.name = :stateName 
+    join addr_country  ac on ac.id = s.country_id and (ac.iso3 = :countryShortName or ac.iso2 = :countryShortName) 
+    where c.name = :cityName`, {
+        stateName: location.stateName, 
+        countryShortName: location.countryShortName, 
+        cityName: location.cityName});
+
+
+    let sql = `insert into res_branch_location(id, city_id, address_line_1, formatted_address, lat, lng, address_components)
+    values (UUID_TO_BIN(:id), :cityId, :addressLine1, :formattedAddress, :lat, :lng, :addressComponents)
+    on duplicate key update city_id = :cityId, address_line_1 = :addressLine1, formatted_address = :formattedAddress, 
+    lat = :lat, lng = :lng, address_components = :addressComponents;
+    select BIN_TO_UUID(bl.id) as id, bl.formatted_address as formattedAddress, bl.address_line_1 as addressLine1, 
+    bl.city_id as cityId,
+    JSON_OBJECT('lat', bl.lat, 'lng', bl.lng) as latLng
+    from res_branch_location bl where bl.id = UUID_TO_BIN(:id)`;
     let params = {
         id: id,
-        line1: address.line1,
-        cityId: address.cityId,
-        latLng: address.latLng
+        cityId: city && city.id ? city.id: null,
+        addressLine1: location.addressLine1,
+        formattedAddress: location.formattedAddress,
+        addressComponents: location.address_components,
+        lat: location.latLng.lat,
+        lng: location.latLng.lng
     }
     return query(sql, params);
 }

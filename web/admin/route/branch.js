@@ -8,5 +8,5 @@ router.get('', branchController.filter);
 router.get('/available', branchController.available);
 router.get('/:id', branchController.get);
 router.post('/:id/manager', branchController.updateManager);
-router.post('/:id/address', checkSchema(branchAddressSchema), branchController.updateAddress);
+router.post('/:id/location', checkSchema({}), branchController.updateLocation);
 module.exports = router;

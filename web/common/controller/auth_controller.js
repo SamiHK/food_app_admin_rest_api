@@ -5,6 +5,8 @@ const userDao = require('../dao/user_dao');
 const { sendErrorResponse, authenticationResponse, notFound, emailNotFound } = require('../util/http_util');
 const { sendEmail } = require('../../email');
 const { v4: uuidv4 } = require('uuid');
+const { CustomError } = require('../../errors');
+
 
 exports.login = async (req, res) => {
     const result = validationResult(req);
@@ -57,10 +59,10 @@ exports.updatePassword = async (req, res) => {
                 if(result && result.length == 2)
                     res.status(200).json(result[1][0]);
                 else 
-                    sendErrorResponse(Error(`Something gone wrong`), res);
+                    sendErrorResponse(new CustomError(`Something gone wrong`), res);
 
             } else {
-                sendErrorResponse(Error(`User not found by id: ${userId}`), res);
+                sendErrorResponse(new CustomError(`User not found by id: ${userId}`), res);
             }
         } catch (e) {
             sendErrorResponse(e, res);
@@ -110,7 +112,7 @@ exports.enabled = async (req, res) => {
                     sendEmail(`${process.env.APP_NAME} - Account Deactivated`, user.email, 'Your account has been deactivated. contact Admin');
                 res.status(200).send(response[1][0]);
             } else {
-                sendErrorResponse(new Error('Something gone wrong while updating enable status of user'));
+                sendErrorResponse(new CustomError('Something gone wrong while updating enable status of user'));
             }
         } else {
             notFound({

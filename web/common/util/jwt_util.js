@@ -1,7 +1,4 @@
 const _jwt = require('jsonwebtoken');
-const { sendErrorResponse } = require('./http_util');
-
-
 
 exports.generateJwtToken = (payload, privateKey = process.env.secret_key) => {
     return _jwt.sign(payload, privateKey);

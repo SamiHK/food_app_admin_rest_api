@@ -15,10 +15,17 @@ exports.getAuthUser = async (username) => {
     (case 
         when concat_ws(' ', up.first_name, up.last_name) != '' then concat_ws(' ', up.first_name, up.last_name)
         when u.username is not null then u.username
-        else u.email end ) as fullName
+        else u.email end ) as fullName,
+    (case
+            when rb.id is not null then BIN_TO_UUID(rb.id)
+            when rbs.branch_id is not null then BIN_TO_UUID(rbs.branch_id)
+            else null
+        end ) as branchId        
     from auth_user u
     join auth_user_role ur on ur.user_id = u.id
     left join auth_user_profile up on up.id = u.id
+    left join res_branch rb on rb.manager_id = u.id 
+    left join res_branch_salesperson rbs on rbs.salesperson_id = u.id
     where u.email = :username or u.username = :username `;
     let user = await querySingleResult(sql, params);
     return user;

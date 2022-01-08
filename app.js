@@ -13,7 +13,8 @@ var profileRoutes = require('./web/common/route/profile');
 var userRoutes = require('./web/common/route/users');
 var adminManagerRoutes = require('./web/admin/route/manager');
 var adminBranchRoutes = require('./web/admin/route/branch');
-const { authorizedAdminJwtToken, authorizedJwtToken } = require('./web/common/util/http_util');
+var managerSalespersonRoutes = require('./web/manager/route/salesperson');
+const { authorizedAdminJwtToken, authorizedJwtToken, authorizedManagerJwtToken } = require('./web/common/util/http_util');
 
 var app = express();
 var corsOptions = {
@@ -40,6 +41,8 @@ app.use(`${base_uri}/profile`, authorizedJwtToken, profileRoutes);
 app.use(`${base_uri}/user`, authorizedJwtToken, userRoutes);
 app.use(`${base_uri}/admin/manager`, authorizedAdminJwtToken, adminManagerRoutes);
 app.use(`${base_uri}/admin/branch`, authorizedAdminJwtToken, adminBranchRoutes);
+// app.use(`${base_uri}/admin/salesperson`, authorizedAdminJwtToken, adminBranchRoutes);
+app.use(`${base_uri}/manager/salesperson`, authorizedManagerJwtToken, managerSalespersonRoutes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -47,7 +50,7 @@ app.use(function(req, res, next) {
 });
 
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function(err, req, res) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};

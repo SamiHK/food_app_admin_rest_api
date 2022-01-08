@@ -47,7 +47,7 @@ exports.get = async (id) => {
     return manager;
 }
 
-exports.filter = async (search, pageNumber = 0, pageSize = 10, orderByProp='created_on', order='desc') => {
+exports.filter = async (search, pageNumber = 0, pageSize = 10, sortBy='username', sortOrder='desc') => {
     let whereClause = ''
     let params = {};
     if(search) {
@@ -68,9 +68,7 @@ exports.filter = async (search, pageNumber = 0, pageSize = 10, orderByProp='crea
 
     Object.assign(params, {
         offset: pageNumber > 0 ? (pageNumber - 1) * pageSize : pageNumber,
-        length: pageSize,
-        column: orderByProp,
-        order: order
+        length: pageSize
     })
     
     sql = `select BIN_TO_UUID(u.id) as id, u.username as username, u.email as email, u.is_email_verified as isEmailVerified, 
@@ -83,7 +81,6 @@ exports.filter = async (search, pageNumber = 0, pageSize = 10, orderByProp='crea
     concat(b.code, ' (', b.name, ')') as branch,
     b.name as branchName,
     b.code as branchCode,
-    b.address as branchAddress,
     ea.created_on as createdOn,
     ea.updated_on as updatedOn
     from auth_user u 
@@ -92,13 +89,13 @@ exports.filter = async (search, pageNumber = 0, pageSize = 10, orderByProp='crea
     left join res_branch b on b.manager_id = u.id
     left join entity_audit ea on ea.entity_id = u.id
     ${whereClause}
-    order by username, email, fullName asc 
+    order by ${sortBy} ${sortOrder} 
     limit :offset, :length `;
     page.items = await query(sql, params);
     return page;
 }
 
-exports.available = async (pageNumber = 0, pageSize = 100, orderByProp='username', order='asc') => {
+exports.available = async (pageNumber = 0, pageSize = 100, sortBy='username', sortOrder='asc') => {
     let sql = `select count(u.id) as total
     from auth_user u 
     join auth_user_role ur on ur.user_id = u.id and ur.role_id = 'MANAGER'
@@ -124,7 +121,7 @@ exports.available = async (pageNumber = 0, pageSize = 100, orderByProp='username
     left join auth_user_profile up on up.id = u.id 
     where u.enabled = 1 
     and u.id not in (select b.manager_id from res_branch b where b.manager_id is not null)
-    order by ${orderByProp} ${order} 
+    order by ${sortBy} ${sortOrder} 
     limit :offset, :length `;
     page.items = await query(sql, params);
     return page;

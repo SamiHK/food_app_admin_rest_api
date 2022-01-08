@@ -31,7 +31,7 @@ exports.branchSaveSchema = {
 }
 
 exports.branchAddressSchema = {
-    addressLine1: _address_line1,
+    formattedAddress: _address_line1,
     cityId: _required,
     latLng: _required
 }

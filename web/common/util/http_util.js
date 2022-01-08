@@ -28,18 +28,12 @@ module.exports.emailNotFound = (email, res) => {
 }
 
 module.exports.sendErrorResponse = (e, res, status=500) => {
-    let errorMessage = {
-        error: {
-            type: e.name,
-            code: e.code,
-            message: e.message,
-            // stack: e.stack,
-            sql: e.sql,
-            sqlMessage: e.sqlMessage
-        }
-    };
+    if(e.code == 'ER_DUP_ENTRY'){
+        res.status(409).json(e);
+    } else {
+        res.status(status).json(e);
+    }
     logger.error(e);
-    res.status(status).send(errorMessage);
 }
 
 module.exports.authenticationResponse = (emailOrUsername, password, user, res) => {
@@ -52,6 +46,7 @@ module.exports.authenticationResponse = (emailOrUsername, password, user, res) =
                     username: user.username,
                     fullName: user.fullName,
                     role: user.role,
+                    branchId: user.branchId,
                     enabled: user.enabled,
                     lastLogin: user.lastLogin,
                     profilePicture: user.profilePicture,
@@ -59,36 +54,43 @@ module.exports.authenticationResponse = (emailOrUsername, password, user, res) =
                         id: user.id,
                         email: user.email,
                         username: user.username,
-                        role: user.role
+                        role: user.role,
+                        branchId: user.branchId
                     })
                 };
                 res.send(_user);
                 updateLastLogin(user.id);    
             } else {
-                sendErrorResponse({
+                this.sendErrorResponse({
                     type: 'ACC_DEACTIVATED',
                     code: 'ACC_DEACTIVATED',
                     error: 'Account Deactivated',
                     message: 'your account is deactivated. kindly contact with admin'}, res);
             }   
         } else {
-            res.send({
-                error: 'INVALID CREDIENTIALS',
-                message: 'password does not match.'
-            });
+            this.sendErrorResponse({
+                code: 'INVALID_CREDIENTIIALS',
+                name: 'Invalid password',
+                message: 'password does not match'
+            }, res);
         }    
     } else {
-        res.send({
-            error: 'USER NOT FOUND',
+        this.sendErrorResponse({
+            code: 'USER_NOT_FOUND',
+            name: 'User not found',
             message: `user with email or username '${emailOrUsername}' not found`
-        });            
+        }, res);            
     }
 }
 
-getAuthorizedUserFromJwtToken = async(req, res) => {
+exports.getAuthorizedUserFromJwtToken = async(req, res) => {
     let authorization_bearer_token = req.headers.authorization
     if(!authorization_bearer_token){
-        res.status(401).send()
+        res.status(401).send({
+            code: 'UNAUHTORIZED_REQUEST',
+            name: 'Unauthorized Request',
+            message: 'Jwt Token is missing in request headers'
+        })
     } else {
         let token = authorization_bearer_token.split(' ')[1];
         // console.log(token)
@@ -98,9 +100,8 @@ getAuthorizedUserFromJwtToken = async(req, res) => {
                 return user
             } else {
                 this.sendErrorResponse({
-                    code: 'INVALID USER TOKEN',
-                    name: 'INVALID USER TOKEN',
-                    message: 'JWT TOKEN IS VALID, BUT USER IS CORRUPTED, EITHER USER IS EMPTY OR ID IS NULL'
+                    name: 'Invalid JsonWebToken Payload',
+                    message: 'Jwt token is valid, but payload of user is corrupted. Either payload is empty or user id is null.'
                 }, res, 401)
             }
         } catch (e) {
@@ -111,21 +112,24 @@ getAuthorizedUserFromJwtToken = async(req, res) => {
 }
 
 exports.authorizedJwtToken = async (req, res, next) => {
-    let user = getAuthorizedUserFromJwtToken(req, res)
+    let user = this.getAuthorizedUserFromJwtToken(req, res)
     if(user){
         next()
     }
 }
 
 exports.authorizedRoleJwtToken = async (req, res, next, ROLE) => {
-    let user = await getAuthorizedUserFromJwtToken(req, res)
-    if(user && user.role == ROLE){
-        next()
-    } else {
-        this.sendErrorResponse({
-            code: 'UNAUTHORIZED ACCESS',
-            message: `REQUIRED ${ROLE} ROLE TO ACCESS THIS OPERATION`
-        }, res)
+    let user = await this.getAuthorizedUserFromJwtToken(req, res)
+    if(user){
+        if(user && user.role == ROLE){
+            next()
+        } else {
+            this.sendErrorResponse({
+                code: 'UNAUTHORIZED ACCESS',
+                name: `Unauthorized access for role ${user.role}`,
+                message: `Required ${ROLE} role to access this operation`
+            }, res)
+        }
     }
 }
 

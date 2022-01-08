@@ -26,6 +26,11 @@ exports.register = (salesperson) => {
     return query(sql, params);
 }
 
+exports.get = (id) => {
+    let params = {id: id};
+    return query(selectSalespersonById, params);
+}
+
 exports.updateBranch = (id, branchId) => {
     let params = {
         id: id,
