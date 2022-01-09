@@ -46,6 +46,54 @@ exports.filter = async (search, pageNumber = 1, pageSize = 10, orderByProp='name
     return page;
 }
 
+exports.salesperson = async (options, orderByProp='fullName', order='asc') => {
+    let whereClause = '';
+    let pageNumber = options.pageNumber > 0 ? (options.pageNumber - 1) * options.pageSize : options.pageNumber; 
+    let pageSize = options.pageSize;
+    let params = {
+        branchId: options.branchId,
+        offset: pageNumber,
+        length: pageSize,
+        column: orderByProp,
+        order: order
+    };
+    if(options.search) {
+        whereClause = `where su.username like :search 
+        or su.email like :search 
+        or fullName like :search `;
+        params.search = `%${options.search}%`;
+    }
+    sql = `select count(su.id) as total
+    from auth_user su
+    join auth_user_role sur on sur.user_id = su.id and sur.role_id = 'SALES_PERSON'
+    left join auth_user_profile sup on sup.id = su.id
+    join res_branch_salesperson bs on bs.branch_id = UUID_TO_BIN(:branchId) and bs.salesperson_id = su.id
+    ${whereClause};
+    select BIN_TO_UUID(su.id) as id, su.username, su.email, su.enabled, su.last_login as lastLogin,
+    (case
+        when concat(sup.first_name, ' ', sup.last_name) is not null then concat(sup.first_name, ' ', sup.last_name)
+        when su.username is not null then su.username
+        else su.email 
+    end) as fullName
+    from auth_user su
+    join auth_user_role sur on sur.user_id = su.id and sur.role_id = 'SALES_PERSON'
+    left join auth_user_profile sup on sup.id = su.id
+    join res_branch_salesperson bs on bs.branch_id = UUID_TO_BIN(:branchId) and bs.salesperson_id = su.id
+    ${whereClause}
+    order by ${orderByProp} ${order} 
+    limit :offset, :length `;
+    let queryResult = await query(sql, params);
+    let page = {
+        number: pageNumber,
+        size: pageSize,
+        total: 0,
+        items: []
+    };
+    Object.assign(page, queryResult[0][0]);
+    Object.assign(page.items, queryResult[1]);
+    return page;
+}
+
 exports.available = async (search, pageNumber = 1, pageSize = 100) => {
     let whereClause = '';
     let params = {
@@ -111,16 +159,20 @@ exports.updateManager = async (id, managerId) => {
 } 
 
 exports.get = async (id) => {
-    let params = [id];
+    let params = {id: id};
     let sql = `select BIN_TO_UUID(b.id) as id, b.name, b.code, b.active, BIN_TO_UUID(b.manager_id) as managerId, 
     u.username, u.email, up.first_name as firstName, up.last_name as lastName,
     concat_ws(' ', up.first_name, up.last_name) as fullName,
-    bl.*
+    bl.*,
+    (select count(spu.id) 
+    from auth_user spu 
+    join auth_user_role spur on spur.user_id = spu.id and spur.role_id = 'SALES_PERSON'
+    join res_branch_salesperson bs on bs.branch_id = UUID_TO_BIN(:id) and bs.salesperson_id = spu.id) as totalActiveSalespersons
     from res_branch b 
     left join res_branch_location bl on bl.id = b.id
     left join auth_user u on u.id = b.manager_id
     left join auth_user_profile up on up.id = b.manager_id
-    where b.id = UUID_TO_BIN(?)`;
+    where b.id = UUID_TO_BIN(:id);`;
     let options = {
         sql: sql,
         nestTables: true
@@ -128,6 +180,7 @@ exports.get = async (id) => {
     let result = await querySingleResult(options, params);
     let branch = result['b'];
     branch.id = result[''].id;
+    branch.totalActiveSalespersons = result[''].totalActiveSalespersons;
     branch.managerId = result[''].managerId;
     if(branch.managerId){
         branch.manager = result['u'];

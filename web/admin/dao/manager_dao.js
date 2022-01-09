@@ -17,7 +17,7 @@ exports.register = async (user) => {
 }
 
 exports.get = async (id) => {
-    let params = [id]
+    let params = {id: id}
     let sql = `select BIN_TO_UUID(u.id) as id, u.username, u.email, u.enabled, u.last_login as lastLogin, 
     u.last_password_update as lastPasswordUpdate,
     up.first_name as firstName, up.last_name as lastName, concat_ws(' ', up.first_name, up.last_name) as fullName, 
@@ -29,7 +29,7 @@ exports.get = async (id) => {
     left join auth_user_role ur on ur.user_id = u.id
     left join auth_user_profile up on up.id = u.id
     left join res_branch b on b.manager_id = u.id
-    where u.id = UUID_TO_BIN(?)`;
+    where u.id = UUID_TO_BIN(:id);`;
     let options = {
         sql: sql,
         nestTables: true
@@ -43,6 +43,13 @@ exports.get = async (id) => {
     manager.branchId = result[''].branchId;
     if(manager.branchId){
         manager.branch = result['b'];
+        manager.salespersons = await query(`select BIN_TO_UUID(sp.id) as id, sp.username, sp.email, concat_ws(' ', spf.first_name, spf.last_name) as fullName
+        from auth_user sp
+        join auth_user_role spr on spr.user_id = sp.id and spr.role_id = 'SALES_PERSON'
+        left join auth_user_profile spf on spf.id = sp.id
+        join res_branch_salesperson bs on bs.salesperson_id = sp.id and bs.branch_id = UUID_TO_BIN(:branchId)`, {
+            branchId: manager.branchId
+        })
     }
     return manager;
 }
