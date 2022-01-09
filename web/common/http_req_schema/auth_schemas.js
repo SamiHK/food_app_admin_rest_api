@@ -48,6 +48,10 @@ exports.managerRegisterSchema = {
     username: _username
 }
 
+exports.salespersonRegisterSchema = {
+    username: _username
+}
+
 exports.emailSchema = {
     email: _email
 }

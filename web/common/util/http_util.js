@@ -122,6 +122,7 @@ exports.authorizedRoleJwtToken = async (req, res, next, ROLE) => {
     let user = await this.getAuthorizedUserFromJwtToken(req, res)
     if(user){
         if(user && user.role == ROLE){
+            res.locals.user = user;
             next()
         } else {
             this.sendErrorResponse({
