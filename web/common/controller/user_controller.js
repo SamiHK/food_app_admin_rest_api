@@ -22,7 +22,7 @@ exports.updateEmail = async (req, res) => {
                 sendEmail(`${process.env.APP_NAME} - Email Changed`, user.email, 
                     `Your email has been updated to ${newEmail}. Kindly contact Admin`);
                 sendEmail(`${process.env.APP_NAME} - Verify your email`, newEmail, 
-                    `Verify your email by visiting the following URL ${process.env.DOMAIN}verifyEmail/${emailVerifyToken}.`);
+                    `Verify your email by visiting the following URL ${process.env.DOMAIN}/#/verifyEmail/${emailVerifyToken}.`);
                 if(response && response.length == 2)
                     res.status(200).send(response[1][0]);
                 else 

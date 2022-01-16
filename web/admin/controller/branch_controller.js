@@ -1,8 +1,6 @@
-var logger = require('../../../logger');
 var branchDao = require('../dao/branch_dao');
 var { sendErrorResponse } = require('../../common/util/http_util');
 var { validationResult } = require('express-validator');
-const { options } = require('../route/branch');
 
 
 exports.available = async (req, res) => {
@@ -33,12 +31,12 @@ exports.filter = async (req, res) => {
 
 exports.salesperson = async (req, res) => {
     try {
-        let options = {
+        let filterParams = {
             branchId: req.params.id,
             pageNumber: req.query.number ? parseInt(req.query.number) : 0,
             pageSize: req.query.size ? parseInt(req.query.size) : parseInt(process.env.DEFAULT_PAGE_SIZE),
         }
-        let salesperson = await branchDao.salesperson(options)
+        let salesperson = await branchDao.salesperson(filterParams)
         res.json(salesperson);
     } catch (e) {
         sendErrorResponse(e, res);

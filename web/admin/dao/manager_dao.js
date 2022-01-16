@@ -54,7 +54,7 @@ exports.get = async (id) => {
     return manager;
 }
 
-exports.filter = async (search, pageNumber = 0, pageSize = 10, sortBy='username', sortOrder='desc') => {
+exports.filter = async (search, pageNumber = 0, pageSize = parseInt(process.env.DEFAULT_PAGE_SIZE), sortBy='username', sortOrder='desc') => {
     let whereClause = ''
     let params = {};
     if(search) {

@@ -32,7 +32,7 @@ exports.forgetPassword = async (req, res) => {
             if (user) {
                 let token = uuidv4();
                 await authDao.forgetPassword(user.id, token);
-                sendEmail(`${process.env.APP_NAME} - Reset Password link`, user.email, `click this URL ${process.env.DOMAIN}reset/password/${token} to reset your password.`);
+                sendEmail(`${process.env.APP_NAME} - Reset Password link`, user.email, `click this URL ${process.env.DOMAIN}/#/reset/password/${token} to reset your password.`);
                 res.status(200).send();
             } else {
                 emailNotFound(req.body.email, res);

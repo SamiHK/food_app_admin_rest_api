@@ -1,7 +1,7 @@
 var { query, querySingleResult } = require('../../db');
 var {v4: uuidv4} = require('uuid');
 
-exports.filter = async (search, pageNumber = 1, pageSize = 10, orderByProp='name', order='asc') => {
+exports.filter = async (search, pageNumber = 1, pageSize = parseInt(process.env.DEFAULT_PAGE_SIZE), orderByProp='name', order='asc') => {
     let whereClause = '';
     let params = {
         offset: pageNumber > 0 ? (pageNumber - 1) * pageSize : pageNumber,

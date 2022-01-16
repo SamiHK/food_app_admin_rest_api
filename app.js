@@ -13,6 +13,7 @@ var profileRoutes = require('./web/common/route/profile');
 var userRoutes = require('./web/common/route/users');
 var adminManagerRoutes = require('./web/admin/route/manager');
 var adminBranchRoutes = require('./web/admin/route/branch');
+var adminMenuhRoutes = require('./web/admin/route/menu');
 var managerSalespersonRoutes = require('./web/manager/route/salesperson');
 const { authorizedAdminJwtToken, authorizedJwtToken, authorizedManagerJwtToken } = require('./web/common/util/http_util');
 
@@ -41,6 +42,7 @@ app.use(`${base_uri}/profile`, authorizedJwtToken, profileRoutes);
 app.use(`${base_uri}/user`, authorizedJwtToken, userRoutes);
 app.use(`${base_uri}/admin/manager`, authorizedAdminJwtToken, adminManagerRoutes);
 app.use(`${base_uri}/admin/branch`, authorizedAdminJwtToken, adminBranchRoutes);
+app.use(`${base_uri}/admin/menu`, authorizedAdminJwtToken, adminMenuhRoutes);
 // app.use(`${base_uri}/admin/salesperson`, authorizedAdminJwtToken, adminBranchRoutes);
 app.use(`${base_uri}/manager/salesperson`, authorizedManagerJwtToken, managerSalespersonRoutes);
 
