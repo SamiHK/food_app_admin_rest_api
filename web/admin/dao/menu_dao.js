@@ -107,25 +107,78 @@ exports.item = async (menuItemId) => {
 }
 
 exports.items = async (menuId) => {
-    let params = [menuId]
-    let sql = `select i.id, i.menu_id as menuId, i.title, i.description, i.price, i.old_price as oldPrice
+    let params = {
+        menuId: menuId,
+        fileAccessPath: process.env.FILE_ACCESS_PATH
+    };
+
+    let sql = `select i.id, i.menu_id as menuId, i.title, i.description, i.price, i.old_price as oldPrice,
+    concat(:fileAccessPath, '/', f.name) as primaryImg
     from res_menu_item i 
-    where i.menu_id = ?
+    left join file_image f on f.id = i.pri_img_id
+    where i.menu_id = :menuId
     order by i.sort_order `;
     return query(sql, params);
 }
 
 exports.filter = async (filterParams, sortBy='sort_order', sortOrder='asc') => {
-    let sql = `select m.id, m.title, m.description, m.sort_order as sortOrder from res_menu m
+    let sql = `select m.id, m.title, m.description, m.sort_order as sortOrder, concat(:fileAccessPath, '/', f.name) as primaryImg 
+    from res_menu m
+    left join file_image f on f.id = m.pri_img_id
     order by ${sortBy} ${sortOrder}`;
     // let params = {
     //     offset: filterParams.pageNumber && filterParams.pageNumber > 0 ? (filterParams.pageNumber - 1) * filterParams.pageSize: 0,
     //     length: filterParams.pageSize
     // }
 
+    let params = {
+        fileAccessPath: process.env.FILE_ACCESS_PATH
+    }
+
     if(filterParams.search){
         filterParams.search = `%${filterParams.search}%`
     }
 
-    return query(sql);
+    return query(sql, params);
+}
+
+
+exports.updateMenuImage = async (menuId, file) => {
+    let sql = `delete file_image
+    from file_image 
+    join res_menu on res_menu.pri_img_id = file_image.id 
+    where res_menu.id = :menuId;
+    insert into file_image (id, path, mime_type, name) values (unhex(:fileId), :path, :mimeType, :name);
+    update res_menu set pri_img_id = unhex(:fileId) where id = :menuId;
+    select lower(hex(f.id)) as id, f.name, f.mime_type as mimeType, f.path 
+    from file_image f
+    join res_menu m on m.pri_img_id = f.id and m.id = :menuId`;
+    let params = {
+        fileId: file.id,
+        name: file.filename,
+        mimeType: file.mimetype,
+        path: file.path,
+        menuId: menuId
+    } 
+    return query(sql, params);
+}
+
+exports.updateMenuItemImage = async (menuItemId, file) => {
+    let sql = `delete file_image
+    from file_image 
+    join res_menu_item on res_menu_item.pri_img_id = file_image.id 
+    where res_menu_item.id = :menuItemId;
+    insert into file_image (id, path, mime_type, name) values (unhex(:fileId), :path, :mimeType, :name);
+    update res_menu_item set pri_img_id = unhex(:fileId) where id = :menuItemId;
+    select lower(hex(f.id)) as id, f.name, f.mime_type as mimeType, f.path 
+    from file_image f
+    join res_menu_item m on m.pri_img_id = f.id and m.id = :menuItemId`;
+    let params = {
+        fileId: file.id,
+        name: file.filename,
+        mimeType: file.mimetype,
+        path: file.path,
+        menuItemId: menuItemId
+    } 
+    return query(sql, params);
 }

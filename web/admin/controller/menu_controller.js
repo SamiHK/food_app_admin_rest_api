@@ -1,5 +1,5 @@
 const { validationResult } = require("express-validator");
-const { filter, get, create, update, updateSorting, createItem, items, item, updateItem, updateItemSorting } = require("../dao/menu_dao");
+const { filter, get, create, update, updateSorting, createItem, items, item, updateItem, updateItemSorting, updateMenuImage, updateMenuItemImage } = require("../dao/menu_dao");
 const { sendErrorResponse } = require('../../common/util/http_util');
 const { CustomError } = require("../../errors");
 
@@ -158,5 +158,47 @@ exports.filter = async (req, res) => {
         res.json(menus);
     } catch (e) {
         sendErrorResponse(e, res);
+    }
+}
+
+exports.updateMenuImage = async (req, res) => {
+    // console.log(req.file);
+    let file = req.file;
+    if(file){
+        try {
+            let results = await updateMenuImage(req.params.id, file);
+            if(results && results.length == 4){
+                let fileImg = results[3][0];
+                fileImg.path = `${process.env.FILE_ACCESS_PATH}/${fileImg.name}`
+                res.json(results[3][0]);
+            } else {
+                sendErrorResponse(new Error('Something gone wrong'), res);
+            }            
+        } catch (e) {
+            sendErrorResponse(e, res)
+        }
+    } else {
+        sendErrorResponse(new Error('something gone wrong while saving file'), res)
+    }
+}
+
+exports.updateMenuItemImage = async (req, res) => {
+    // console.log(req.file);
+    let file = req.file;
+    if(file){
+        try {
+            let results = await updateMenuItemImage(req.params.id, file);
+            if(results && results.length == 4){
+                let fileImg = results[3][0];
+                fileImg.path = `${process.env.FILE_ACCESS_PATH}/${fileImg.name}`
+                res.json(results[3][0]);
+            } else {
+                sendErrorResponse(new Error('Something gone wrong'), res);
+            }            
+        } catch (e) {
+            sendErrorResponse(e, res)
+        }
+    } else {
+        sendErrorResponse(new Error('something gone wrong while saving file'), res)
     }
 }
