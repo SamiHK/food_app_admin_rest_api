@@ -46,6 +46,7 @@ app.use(`${base_uri}/user`, authorizedJwtToken, userRoutes);
 app.use(`${base_uri}/admin/manager`, authorizedAdminJwtToken, adminManagerRoutes);
 app.use(`${base_uri}/admin/branch`, authorizedAdminJwtToken, adminBranchRoutes);
 app.use(`${base_uri}/admin/menu`, authorizedAdminJwtToken, adminMenuRoutes);
+app.use(`${base_uri}/manager/menu`, authorizedManagerJwtToken, adminMenuRoutes);
 app.use(`${base_uri}/admin/file`, authorizedAdminJwtToken, adminFileRoutes);
 // app.use(`${base_uri}/admin/salesperson`, authorizedAdminJwtToken, adminBranchRoutes);
 app.use(`${base_uri}/manager/salesperson`, authorizedManagerJwtToken, managerSalespersonRoutes);
