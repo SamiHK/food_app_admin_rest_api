@@ -122,7 +122,9 @@ exports.items = async (menuId) => {
 }
 
 exports.filter = async (filterParams, sortBy='sort_order', sortOrder='asc') => {
-    let sql = `select m.id, m.title, m.description, m.sort_order as sortOrder, concat(:fileAccessPath, '/', f.name) as primaryImg 
+    let sql = `select m.id, m.title, m.description, m.sort_order as sortOrder, 
+    concat(:fileAccessPath, '/', f.name) as primaryImg,
+    (select count(i.id) from res_menu_item i where i.menu_id = m.id ) as totalItems
     from res_menu m
     left join file_image f on f.id = m.pri_img_id
     order by ${sortBy} ${sortOrder}`;
