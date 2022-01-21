@@ -6,9 +6,7 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
-// var indexRouter = require('./routes/index');
-// var usersRouter = require('./routes/users');
-var fileRoutes = require('./web/common/route/file');
+var imageRoutes = require('./web/common/route/image');
 var authRoutes = require('./web/common/route/auth');
 var profileRoutes = require('./web/common/route/profile');
 var userRoutes = require('./web/common/route/users');
@@ -37,10 +35,8 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use(`/images`, imageRoutes);
 const base_uri = '/api'
-// app.use('/', indexRouter);
-// app.use('/users', usersRouter);
-app.use(`${base_uri}/files`, fileRoutes);
 app.use(`${base_uri}/auth`, authRoutes);
 app.use(`${base_uri}/profile`, authorizedJwtToken, profileRoutes);
 app.use(`${base_uri}/user`, authorizedJwtToken, userRoutes);

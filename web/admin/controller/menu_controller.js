@@ -1,16 +1,28 @@
 const { validationResult } = require("express-validator");
-const { filter, get, create, update, updateSorting, createItem, items, item, updateItem, updateItemSorting, updateMenuImage, updateMenuItemImage } = require("../dao/menu_dao");
+const { getMenus, 
+    getMenu, 
+    createMenu,
+    updateMenu, 
+    updateMenuSorting,
+    createMenuItem, 
+    getMenuItems, 
+    getMenuItem, 
+    updateMenuItem, 
+    updateMenuItemSorting,
+    updateMenuImage, 
+    updateMenuItemImage } = require("../dao/menu_dao");
 const { sendErrorResponse } = require('../../common/util/http_util');
 const { CustomError } = require("../../errors");
+const { deleteFile } = require("../../file_storage");
 
-exports.create = async (req, res) => {
+exports.createMenu = async (req, res) => {
     const result = validationResult(req);
     if(!result.isEmpty()){
         return res.status(400).send(result);
     } else {
         try {
             let menu = req.body;
-            let results = await create(menu);
+            let results = await createMenu(menu);
             if(results && results.length == 3){
                 res.json(results[2][0]);
             } else {
@@ -22,7 +34,7 @@ exports.create = async (req, res) => {
     }
 }
 
-exports.createItem = async (req, res) => {
+exports.createMenuItem = async (req, res) => {
     const result = validationResult(req);
     if(!result.isEmpty()){
         return res.status(400).send(result);
@@ -30,7 +42,7 @@ exports.createItem = async (req, res) => {
         try {
             let menuId = req.params.id;
             let menuItem = req.body;
-            let results = await createItem(menuId, menuItem);
+            let results = await createMenuItem(menuId, menuItem);
             if(results && results.length == 3){
                 res.json(results[2][0]);
             } else {
@@ -42,14 +54,14 @@ exports.createItem = async (req, res) => {
     }
 }
 
-exports.update = async (req, res) => {
+exports.updateMenu = async (req, res) => {
     const result = validationResult(req);
     if(!result.isEmpty()){
         return res.status(400).send(result);
     } else {
         try {
             let menu = req.body;
-            let results = await update(req.params.id, menu);
+            let results = await updateMenu(req.params.id, menu);
             if(results && results.length == 2){
                 res.json(results[1][0]);
             } else {
@@ -61,14 +73,14 @@ exports.update = async (req, res) => {
     }
 }
 
-exports.updateItem = async (req, res) => {
+exports.updateMenuItem = async (req, res) => {
     const result = validationResult(req);
     if(!result.isEmpty()){
         return res.status(400).send(result);
     } else {
         try {
             let menuItem = req.body;
-            let results = await updateItem(req.params.id, menuItem);
+            let results = await updateMenuItem(req.params.id, menuItem);
             if(results && results.length == 2){
                 res.json(results[1][0]);
             } else {
@@ -81,14 +93,14 @@ exports.updateItem = async (req, res) => {
 }
 
 
-exports.updateSorting = async (req, res) => {
+exports.updateMenuSorting = async (req, res) => {
     const result = validationResult(req);
     if(!result.isEmpty()){
         return res.status(400).send(result);
     } else {
         try {
             let menus = req.body;
-            let results = await updateSorting(menus);
+            let results = await updateMenuSorting(menus);
             res.json(results);
             // if(results && results.length == 2){
             // } else {
@@ -100,14 +112,14 @@ exports.updateSorting = async (req, res) => {
     }
 }
 
-exports.updateItemSorting = async (req, res) => {
+exports.updateMenuItemSorting = async (req, res) => {
     const result = validationResult(req);
     if(!result.isEmpty()){
         return res.status(400).send(result);
     } else {
         try {
             let menuItems = req.body;
-            let results = await updateItemSorting(menuItems);
+            let results = await updateMenuItemSorting(menuItems);
             res.json(results);
         } catch (e) {
             sendErrorResponse(e, res);
@@ -115,9 +127,9 @@ exports.updateItemSorting = async (req, res) => {
     }
 }
 
-exports.get = async (req, res) => {
+exports.getMenu = async (req, res) => {
     try {
-        let menu = await get(req.params.id);
+        let menu = await getMenu(req.params.id);
         if(menu){
             res.json(menu);
         } else {
@@ -128,25 +140,25 @@ exports.get = async (req, res) => {
     }
 }
 
-exports.item = async (req, res) => {
+exports.getMenuItem = async (req, res) => {
     try {
-        let menuItem = await item(req.params.id);
+        let menuItem = await getMenuItem(req.params.id);
         res.json(menuItem);
     } catch (e) {
         sendErrorResponse(e, res);
     }
 }
 
-exports.items = async (req, res) => {
+exports.getMenuItemsByMenu = async (req, res) => {
     try {
-        let menuItems = await items(req.params.id);
+        let menuItems = await getMenuItems(req.params.id);
         res.json(menuItems);
     } catch (e) {
         sendErrorResponse(e, res);
     }
 }
 
-exports.filter = async (req, res) => {
+exports.getMenus = async (req, res) => {
     try {
         let filterParams = {};
         filterParams.pageNumber = req.query.number;
@@ -154,7 +166,7 @@ exports.filter = async (req, res) => {
         filterParams.pageSize = req.query.size;
         if(!filterParams.pageSize) filterParams.pageSize = parseInt(process.env.DEFAULT_PAGE_SIZE);
         filterParams.search = req.query.search;
-        let menus = await filter(filterParams);
+        let menus = await getMenus(filterParams);
         res.json(menus);
     } catch (e) {
         sendErrorResponse(e, res);
@@ -166,11 +178,15 @@ exports.updateMenuImage = async (req, res) => {
     let file = req.file;
     if(file){
         try {
+            // file.path = `${process.env.FILE_ACCESS_PATH}/${file.filename}`;
+            // delete the existing image
             let results = await updateMenuImage(req.params.id, file);
-            if(results && results.length == 4){
-                let fileImg = results[3][0];
-                fileImg.path = `${process.env.FILE_ACCESS_PATH}/${fileImg.name}`
-                res.json(results[3][0]);
+            if(results && results.length == 5){
+                let deleteFileImage = results[0][0];
+                if(deleteFileImage) deleteFile(deleteFileImage.name);             
+                let fileImg = results[4][0];
+                // fileImg.path = `${process.env.FILE_ACCESS_PATH}/${fileImg.name}`
+                res.json(fileImg);
             } else {
                 sendErrorResponse(new Error('Something gone wrong'), res);
             }            
@@ -187,10 +203,11 @@ exports.updateMenuItemImage = async (req, res) => {
     let file = req.file;
     if(file){
         try {
+            // delete the existing image
             let results = await updateMenuItemImage(req.params.id, file);
             if(results && results.length == 4){
                 let fileImg = results[3][0];
-                fileImg.path = `${process.env.FILE_ACCESS_PATH}/${fileImg.name}`
+                // fileImg.path = `${process.env.FILE_ACCESS_PATH}/${fileImg.name}`
                 res.json(results[3][0]);
             } else {
                 sendErrorResponse(new Error('Something gone wrong'), res);

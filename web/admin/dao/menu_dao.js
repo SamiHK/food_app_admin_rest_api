@@ -1,6 +1,6 @@
 const { query, querySingleResult } = require("../../db");
 
-exports.create = async (menu) => {
+exports.createMenu = async (menu) => {
     let params = {
         title: menu.title,
         description: menu.description
@@ -13,7 +13,7 @@ exports.create = async (menu) => {
     return query(sql, params);
 }
 
-exports.createItem = async (menuId, menuItem) => {
+exports.createMenuItem = async (menuId, menuItem) => {
     let params = {
         title: menuItem.title,
         description: menuItem.description,
@@ -29,7 +29,7 @@ exports.createItem = async (menuId, menuItem) => {
     return query(sql, params);
 }
 
-exports.update = async (id, menu) => {
+exports.updateMenu = async (id, menu) => {
     let params = {
         id: id,
         title: menu.title,
@@ -41,7 +41,7 @@ exports.update = async (id, menu) => {
     return query(sql, params);
 }
 
-exports.updateItem = async (menuItemId, menuItem) => {
+exports.updateMenuItem = async (menuItemId, menuItem) => {
     let params = {
         title: menuItem.title,
         description: menuItem.description,
@@ -60,7 +60,7 @@ exports.updateItem = async (menuItemId, menuItem) => {
     return query(sql, params);
 }
 
-exports.updateSorting = async (menus) => {
+exports.updateMenuSorting = async (menus) => {
 
     // let params = [];
     menus.forEach(m => {
@@ -77,7 +77,7 @@ exports.updateSorting = async (menus) => {
     
 }
 
-exports.updateItemSorting = async (menuItems) => {
+exports.updateMenuItemSorting = async (menuItems) => {
 
     // let params = [];
     menuItems.forEach(m => {
@@ -93,23 +93,23 @@ exports.updateItemSorting = async (menuItems) => {
     
 }
 
-exports.get = async (id) => {
+exports.getMenu = async (id) => {
     let params = [id]
     let sql = `select * from res_menu where id = ?`;
     return querySingleResult(sql, params);
 }
 
-exports.item = async (menuItemId) => {
+exports.getMenuItem = async (menuItemId) => {
     let params = [menuItemId]
     let sql = `select i.id, i.menu_id as menuId, i.title, i.description, i.price, i.old_price as oldPrice
     from res_menu_item i where i.id = ?`;
     return querySingleResult(sql, params);
 }
 
-exports.items = async (menuId) => {
+exports.getMenuItems = async (menuId) => {
     let params = {
         menuId: menuId,
-        fileAccessPath: process.env.FILE_ACCESS_PATH
+        fileAccessPath: process.env.FILE_STORAGE_READ_PATH
     };
 
     let sql = `select i.id, i.menu_id as menuId, i.title, i.description, i.price, i.old_price as oldPrice,
@@ -121,9 +121,9 @@ exports.items = async (menuId) => {
     return query(sql, params);
 }
 
-exports.filter = async (filterParams, sortBy='sort_order', sortOrder='asc') => {
+exports.getMenus = async (filterParams, sortBy='sort_order', sortOrder='asc') => {
     let sql = `select m.id, m.title, m.description, m.sort_order as sortOrder, 
-    concat(:fileAccessPath, '/', f.name) as primaryImg,
+    concat(:fileAccessPath, f.name) as primaryImg,
     (select count(i.id) from res_menu_item i where i.menu_id = m.id ) as totalItems
     from res_menu m
     left join file_image f on f.id = m.pri_img_id
@@ -134,7 +134,7 @@ exports.filter = async (filterParams, sortBy='sort_order', sortOrder='asc') => {
     // }
 
     let params = {
-        fileAccessPath: process.env.FILE_ACCESS_PATH
+        fileAccessPath: process.env.FILE_STORAGE_READ_PATH
     }
 
     if(filterParams.search){
@@ -146,13 +146,15 @@ exports.filter = async (filterParams, sortBy='sort_order', sortOrder='asc') => {
 
 
 exports.updateMenuImage = async (menuId, file) => {
-    let sql = `delete file_image
+    let sql = `select f.name, f.path from file_image f 
+    join res_menu m on m.pri_img_id = f.id and m.id = :menuId;
+    delete file_image
     from file_image 
     join res_menu on res_menu.pri_img_id = file_image.id 
     where res_menu.id = :menuId;
     insert into file_image (id, path, mime_type, name) values (unhex(:fileId), :path, :mimeType, :name);
     update res_menu set pri_img_id = unhex(:fileId) where id = :menuId;
-    select lower(hex(f.id)) as id, f.name, f.mime_type as mimeType, f.path 
+    select lower(hex(f.id)) as id, f.name, f.mime_type as mimeType, path, concat(:fileAccessPath, f.name) as primaryImg
     from file_image f
     join res_menu m on m.pri_img_id = f.id and m.id = :menuId`;
     let params = {
@@ -160,7 +162,8 @@ exports.updateMenuImage = async (menuId, file) => {
         name: file.filename,
         mimeType: file.mimetype,
         path: file.path,
-        menuId: menuId
+        menuId: menuId,
+        fileAccessPath: process.env.FILE_STORAGE_READ_PATH
     } 
     return query(sql, params);
 }
@@ -172,7 +175,7 @@ exports.updateMenuItemImage = async (menuItemId, file) => {
     where res_menu_item.id = :menuItemId;
     insert into file_image (id, path, mime_type, name) values (unhex(:fileId), :path, :mimeType, :name);
     update res_menu_item set pri_img_id = unhex(:fileId) where id = :menuItemId;
-    select lower(hex(f.id)) as id, f.name, f.mime_type as mimeType, f.path 
+    select lower(hex(f.id)) as id, f.name, f.mime_type as mimeType, f.path, concat(:fileAccessPath, f.name) as primaryImg
     from file_image f
     join res_menu_item m on m.pri_img_id = f.id and m.id = :menuItemId`;
     let params = {
@@ -180,7 +183,8 @@ exports.updateMenuItemImage = async (menuItemId, file) => {
         name: file.filename,
         mimeType: file.mimetype,
         path: file.path,
-        menuItemId: menuItemId
+        menuItemId: menuItemId,
+        fileAccessPath: process.env.FILE_STORAGE_READ_PATH
     } 
     return query(sql, params);
 }

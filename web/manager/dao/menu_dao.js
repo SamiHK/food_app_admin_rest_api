@@ -3,7 +3,7 @@ const { query } = require("../../db");
 exports.filterMenu = async (branchId, filterParams)=> {
     let params = {
         branchId: branchId,
-        fileAccessPath: process.env.FILE_ACCESS_PATH
+        fileAccessPath: process.env.FILE_STORAGE_READ_PATH
     }
     let sql = `select rm.id, rm.title, rm.description, 
     concat(:fileAccessPath, '/', fi.name) as primaryImg,
@@ -27,7 +27,7 @@ exports.filterMenuItems = async (branchId, menuId, filterParams)=> {
     let params = {
         branchId: branchId,
         menuId: menuId,
-        fileAccessPath: process.env.FILE_ACCESS_PATH
+        fileAccessPath: process.env.FILE_STORAGE_READ_PATH
     }
     let sql = `select rmi.id, rmi.title, rmi.description, rmi.price, rmi.old_price as oldPrice,
     concat(:fileAccessPath, '/', fi.name) as primaryImg,
