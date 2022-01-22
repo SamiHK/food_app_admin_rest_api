@@ -181,6 +181,14 @@ exports.updateMenuImage = async (req, res) => {
         try {
             // file.path = `${process.env.FILE_ACCESS_PATH}/${file.filename}`;
             // delete the existing image
+
+            if(!file.path && file.location){
+                file.path = file.location;
+            }
+
+            if(!file.name && file.key){
+                file.filename = file.key
+            }
             let results = await updateMenuImage(req.params.id, file);
             if(results && results.length == 5){
                 let deleteFileImage = results[0][0];
@@ -205,6 +213,14 @@ exports.updateMenuItemImage = async (req, res) => {
     if(file){
         try {
             // delete the existing image
+            if(!file.path && file.location){
+                file.path = file.location;
+            }
+
+            if(!file.name && file.key){
+                file.filename = file.key
+            }
+
             let results = await updateMenuItemImage(req.params.id, file);
             if(results && results.length == 4){
                 let fileImg = results[3][0];
