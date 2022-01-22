@@ -1,4 +1,4 @@
-var router = require('express').Router();
+const router = require('express').Router();
 var { checkSchema } = require('express-validator');
 var branchController = require('../controller/branch_controller');
 var { branchSaveSchema, branchAddressSchema } = require('../../common/http_req_schema/branch_schema');

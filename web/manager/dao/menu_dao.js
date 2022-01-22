@@ -14,6 +14,7 @@ exports.filterMenu = async (branchId, filterParams)=> {
     from res_menu rm 
     left join file_image fi on fi.id = rm.pri_img_id 
     left join res_branch_menu rbm on rbm.menu_id = rm.id and rbm.branch_id = uuid_to_bin(:branchId) 
+    where rm.is_active
     order by isAvailable desc, sortOrder`;
     results = await query(sql, params)
     results.forEach(r => {

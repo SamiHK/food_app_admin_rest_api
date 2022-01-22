@@ -6,3 +6,13 @@ exports.menuSaveSchema = {
         }
     }
 }
+
+
+exports.menuIsActiveSchema = {
+    isActive: {
+        in: ['body'],
+        notEmpty: {
+            errorMessage: 'Is Active flag is required'
+        }
+    }
+}

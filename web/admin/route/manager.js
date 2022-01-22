@@ -1,4 +1,4 @@
-var router = require('express').Router();
+const router = require('express').Router();
 var { checkSchema } = require('express-validator');
 var { managerRegisterSchema } = require('../../common/http_req_schema/auth_schemas');
 const { authorizedJwtToken } = require('../../common/util/http_util');

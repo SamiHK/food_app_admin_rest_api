@@ -10,7 +10,8 @@ const { getMenus,
     updateMenuItem, 
     updateMenuItemSorting,
     updateMenuImage, 
-    updateMenuItemImage } = require("../dao/menu_dao");
+    updateMenuItemImage, 
+    updateMenuIsActive} = require("../dao/menu_dao");
 const { sendErrorResponse } = require('../../common/util/http_util');
 const { CustomError } = require("../../errors");
 const { deleteFile } = require("../../file_storage");
@@ -217,5 +218,21 @@ exports.updateMenuItemImage = async (req, res) => {
         }
     } else {
         sendErrorResponse(new Error('something gone wrong while saving file'), res)
+    }
+}
+
+exports.updateMenuIsActive = async (req, res) => {
+    let valid = validationResult(req);
+    if(!valid.isEmpty()){
+        res.status(400).json(result);
+    } else {
+        try {
+            let menuId = req.params.id;
+            let isActive = req.body.isActive;
+            let result = await updateMenuIsActive(menuId, isActive);
+            res.json(result);            
+        } catch (e) {
+            sendErrorResponse(e, res);
+        }
     }
 }

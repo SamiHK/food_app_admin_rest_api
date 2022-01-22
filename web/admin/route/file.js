@@ -1,4 +1,4 @@
-var router = require('express').Router()
+const router = require('express').Router()
 const { uploadSingle } = require('../../file_storage');
 const { updateMenuImage, updateMenuItemImage } = require('../controller/menu_controller');
 
