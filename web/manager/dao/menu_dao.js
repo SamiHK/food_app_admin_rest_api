@@ -35,7 +35,7 @@ exports.filterMenuItems = async (branchId, menuId, filterParams)=> {
     if(rbm.is_available is null, true, rbm.is_available) isMenuAvailable,
     if(rbmi.is_include is null, true, rbmi.is_include) isInclude,
     if(rbmi.is_available is null, true, rbmi.is_available) isAvailable,
-    if(rbmi.sort_order is null, rmi.sort_order, rbm.sort_order) sortOrder
+    if(rbmi.sort_order is null, rmi.sort_order, rbmi.sort_order) sortOrder
     from res_menu_item rmi
     left join file_image fi on fi.id = rmi.pri_img_id 
     left join res_branch_menu rbm on rbm.menu_id = rmi.menu_id and rbm.branch_id = uuid_to_bin(:branchId) 
@@ -61,8 +61,8 @@ exports.updateMenuSorting = async(menus, branchId) => {
                 branchId: branchId
             }
             query(`insert into res_branch_menu (branch_id, menu_id, sort_order)
-             values (:branchId, :menuId, :sortOrder)
-             on duplicate key set sort_order = :sortOrder`, params);
+             values (uuid_to_bin(:branchId), :menuId, :sortOrder)
+             on duplicate key update sort_order = :sortOrder`, params);
         });
     }
 }
@@ -87,7 +87,7 @@ exports.updateMenuItemSorting = async(menuItems, branchId) => {
                 branchId: branchId
             }
             query(`insert into res_branch_menu_item (branch_id, menu_item_id, sort_order)
-             values (:branchId, :menuItemId, :sortOrder)
+             values (uuid_to_bin(:branchId), :menuItemId, :sortOrder)
              on duplicate key update sort_order = :sortOrder`, params);
         });
     }
