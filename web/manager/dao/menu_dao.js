@@ -6,7 +6,7 @@ exports.filterMenu = async (branchId, filterParams)=> {
         fileAccessPath: process.env.FILE_STORAGE_READ_PATH
     }
     let sql = `select rm.id, rm.title, rm.description, 
-    concat(:fileAccessPath, '/', fi.name) as primaryImg,
+    concat(:fileAccessPath, fi.name) as primaryImg,
     if(rbm.is_include is null, true, rbm.is_include) isInclude,
     if(rbm.is_available is null, true, rbm.is_available) isAvailable,
     (select count(i.id) from res_menu_item i where i.menu_id = rm.id ) as totalItems,
@@ -31,7 +31,7 @@ exports.filterMenuItems = async (branchId, menuId, filterParams)=> {
         fileAccessPath: process.env.FILE_STORAGE_READ_PATH
     }
     let sql = `select rmi.id, rmi.title, rmi.description, rmi.price, rmi.old_price as oldPrice,
-    concat(:fileAccessPath, '/', fi.name) as primaryImg,
+    concat(:fileAccessPath, fi.name) as primaryImg,
     if(rbm.is_available is null, true, rbm.is_available) isMenuAvailable,
     if(rbmi.is_include is null, true, rbmi.is_include) isInclude,
     if(rbmi.is_available is null, true, rbmi.is_available) isAvailable,

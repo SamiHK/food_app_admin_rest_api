@@ -18,7 +18,7 @@ exports.register = (salesperson) => {
         branchId: salesperson.branchId,
         username: salesperson.username,
         email: salesperson.username,
-        password: hashSync(salesperson.username)
+        password: hashSync(salesperson.password ? salesperson.password:salesperson.username)
     };
     let sql = `insert into auth_user(id, username, email, password) values (UUID_TO_BIN(:id), :username, :email, :password);
     insert into auth_user_role(user_id, role_id) values (UUID_TO_BIN(:id), 'SALES_PERSON');

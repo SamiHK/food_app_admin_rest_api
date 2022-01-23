@@ -117,7 +117,7 @@ exports.getMenuItems = async (menuId) => {
 
     let sql = `select i.id, i.menu_id as menuId, i.title, i.description, i.price, i.old_price as oldPrice,
     miu.title as unit,
-    concat(:fileAccessPath, '/', f.name) as primaryImg
+    concat(:fileAccessPath, f.name) as primaryImg
     from res_menu_item i 
     left join file_image f on f.id = i.pri_img_id
     left join res_menu_item_unit miu on miu.id = i.unit_id

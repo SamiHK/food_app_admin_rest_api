@@ -20,7 +20,11 @@ var adminMenuItemUnitRoutes = require('./web/admin/route/menu_item_units');
 var managerMenuRoutes = require('./web/manager/route/menu');
 var managerSalespersonRoutes = require('./web/manager/route/salesperson');
 
-const { authorizedAdminJwtToken, authorizedJwtToken, authorizedManagerJwtToken } = require('./web/common/util/http_util');
+var salesPersonMenuRoutes = require('./web/salesperson/route/menu');
+
+var customerMenuRoutes = require('./web/customer/route/menu');
+
+const { authorizedAdminJwtToken, authorizedJwtToken, authorizedManagerJwtToken, authorizedSalespersonJwtToken } = require('./web/common/util/http_util');
 
 var app = express();
 var corsOptions = {
@@ -53,6 +57,10 @@ app.use(`${base_uri}/admin/menuItemUnit`, authorizedAdminJwtToken, adminMenuItem
 
 app.use(`${base_uri}/manager/menu`, authorizedManagerJwtToken, managerMenuRoutes);
 app.use(`${base_uri}/manager/salesperson`, authorizedManagerJwtToken, managerSalespersonRoutes);
+
+app.use(`${base_uri}/salesperson/menu`, authorizedSalespersonJwtToken, salesPersonMenuRoutes);
+
+app.use(`${base_uri}/menu`, customerMenuRoutes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

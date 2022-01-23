@@ -9,7 +9,7 @@ exports.register = async (user) => {
         id: user.id,
         username: user.username,
         email: user.username,
-        password: bcrypt.hashSync(user.username)
+        password: bcrypt.hashSync(user.password? user.password: user.username)
     }
     let sql = `insert into auth_user(id, username, email, is_email_verified, password) values (UUID_TO_BIN(:id), :username, :email, false, :password);
     insert into auth_user_role(user_id, role_id) values (UUID_TO_BIN(:id), 'MANAGER')`;

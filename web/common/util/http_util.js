@@ -143,5 +143,5 @@ exports.authorizedManagerJwtToken = async (req, res, next) => {
 }
 
 exports.authorizedSalespersonJwtToken = async (req, res, next) => {
-    this.authorizedRoleJwtToken(req, res, next, 'SALESPERSON')
+    this.authorizedRoleJwtToken(req, res, next, 'SALES_PERSON')
 }
