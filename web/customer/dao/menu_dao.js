@@ -1,6 +1,6 @@
 const { query, querySingleResult } = require("../../db");
 
-exports.getMenus = async (filterParams, sortBy='sort_order', sortOrder='asc') => {
+exports.getMenus = async (filterParams, sortBy = 'sort_order', sortOrder = 'asc') => {
     let sql = `select m.id, m.title, m.description, m.sort_order as sortOrder, 
     concat(:fileAccessPath, f.name) as primaryImg, m.is_active as isActive,
     (select count(i.id) from res_menu_item i where i.menu_id = m.id ) as totalItems
@@ -13,15 +13,59 @@ exports.getMenus = async (filterParams, sortBy='sort_order', sortOrder='asc') =>
         fileAccessPath: process.env.FILE_STORAGE_READ_PATH
     }
 
-    if(filterParams.search){
+    if (filterParams.search) {
         filterParams.search = `%${filterParams.search}%`
     }
 
     let result = await query(sql, params);
-    if(result){
+    if (result) {
         result.forEach(f => f.isActive = !!f.isActive)
     }
     return result;
+}
+
+exports.getMenusAndItems = async (filterParams) => {
+    let sql = `select rmi.id, rmi.menu_id, rm.id, rmi.title, rmi.description, rmi.price, rmi.old_price, rmi.pri_img_id,
+    rm.title, rm.description, rm.pri_img_id,
+    concat(:fileAccessPath, mf.name) as mPrimaryImg,
+    concat(:fileAccessPath, mf.name) as miPrimaryImg
+    from res_menu_item rmi 
+    join res_menu rm ON rm.id = rmi.menu_id  and rm.is_active 
+    left join file_image mf on mf.id = rm.pri_img_id
+    left join file_image mif on mif.id = rmi.pri_img_id
+    order by rm.sort_order, rmi.sort_order`;
+
+    let params = {
+        fileAccessPath: process.env.FILE_STORAGE_READ_PATH
+    }
+
+    if (filterParams.search) {
+        filterParams.search = `%${filterParams.search}%`
+    }
+
+    let result = await query({ sql: sql, nestTables: true }, params);
+    let menus = [];
+    // f.isActive = !!f.isActive
+    result.forEach(r => {
+        let m = menus.find(f => f.id == r.rm.id);
+        if(!m){
+            m = r.rm
+            m.primaryImg = r[""].mPrimaryImg;
+            delete m.pri_img_id
+            menus.push(m);
+        }
+        if(!m.items){
+            m.items = []
+        }
+        r.rmi.primaryImg = r[""].miPrimaryImg;
+        delete r.rmi.pri_img_id;
+
+        r.rmi.oldPrice = r.rmi.old_price;
+        delete r.rmi.old_price
+
+        m.items.push(r.rmi)
+    })
+    return menus;
 }
 
 exports.getMenu = async (id) => {

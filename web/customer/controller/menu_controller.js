@@ -2,7 +2,8 @@ const { validationResult } = require("express-validator");
 const { getMenus, 
     getMenu, 
     getMenuItems, 
-    getMenuItem} = require("../dao/menu_dao");
+    getMenuItem,
+    getMenusAndItems} = require("../dao/menu_dao");
 const { sendErrorResponse } = require('../../common/util/http_util');
 const { CustomError } = require("../../errors");
 const { deleteFile } = require("../../file_storage");
@@ -48,6 +49,21 @@ exports.getMenus = async (req, res) => {
         if(!filterParams.pageSize) filterParams.pageSize = parseInt(process.env.DEFAULT_PAGE_SIZE);
         filterParams.search = req.query.search;
         let menus = await getMenus(filterParams);
+        res.json(menus);
+    } catch (e) {
+        sendErrorResponse(e, res);
+    }
+}
+
+exports.getMenusAndItems = async (req, res) => {
+    try {
+        let filterParams = {};
+        filterParams.pageNumber = req.query.number;
+        if(!filterParams.pageNumber) filterParams.pageNumber = 0;
+        filterParams.pageSize = req.query.size;
+        if(!filterParams.pageSize) filterParams.pageSize = parseInt(process.env.DEFAULT_PAGE_SIZE);
+        filterParams.search = req.query.search;
+        let menus = await getMenusAndItems(filterParams);
         res.json(menus);
     } catch (e) {
         sendErrorResponse(e, res);
