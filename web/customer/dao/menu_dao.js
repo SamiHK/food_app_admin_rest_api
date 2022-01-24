@@ -26,9 +26,9 @@ exports.getMenus = async (filterParams, sortBy = 'sort_order', sortOrder = 'asc'
 
 exports.getMenusAndItems = async (filterParams) => {
     let sql = `select rmi.id, rmi.menu_id, rm.id, rmi.title, rmi.description, rmi.price, rmi.old_price, rmi.pri_img_id,
-    rm.title, rm.description, rm.pri_img_id,
+    rm.id, rm.title, rm.description, rm.pri_img_id,
     concat(:fileAccessPath, mf.name) as mPrimaryImg,
-    concat(:fileAccessPath, mf.name) as miPrimaryImg
+    concat(:fileAccessPath, mif.name) as miPrimaryImg
     from res_menu_item rmi 
     join res_menu rm ON rm.id = rmi.menu_id  and rm.is_active 
     left join file_image mf on mf.id = rm.pri_img_id
@@ -52,6 +52,7 @@ exports.getMenusAndItems = async (filterParams) => {
             m = r.rm
             m.primaryImg = r[""].mPrimaryImg;
             delete m.pri_img_id
+            delete m.menu_id
             menus.push(m);
         }
         if(!m.items){
@@ -59,6 +60,8 @@ exports.getMenusAndItems = async (filterParams) => {
         }
         r.rmi.primaryImg = r[""].miPrimaryImg;
         delete r.rmi.pri_img_id;
+        r.rmi.menuId = r.rmi.menu_id
+        delete r.rmi.menu_id
 
         r.rmi.oldPrice = r.rmi.old_price;
         delete r.rmi.old_price
