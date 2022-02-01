@@ -23,6 +23,7 @@ var managerSalespersonRoutes = require('./web/manager/route/salesperson');
 var salesPersonMenuRoutes = require('./web/salesperson/route/menu');
 
 var customerMenuRoutes = require('./web/customer/route/menu');
+var branchRoutes = require('./web/customer/route/branch');
 
 const { authorizedAdminJwtToken, authorizedJwtToken, authorizedManagerJwtToken, authorizedSalespersonJwtToken } = require('./web/common/util/http_util');
 
@@ -61,6 +62,7 @@ app.use(`${base_uri}/manager/salesperson`, authorizedManagerJwtToken, managerSal
 app.use(`${base_uri}/salesperson/menu`, authorizedSalespersonJwtToken, salesPersonMenuRoutes);
 
 app.use(`${base_uri}/menu`, customerMenuRoutes);
+app.use(`${base_uri}/branch`, branchRoutes);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

@@ -48,6 +48,9 @@ exports.getMenus = async (req, res) => {
         filterParams.pageSize = req.query.size;
         if(!filterParams.pageSize) filterParams.pageSize = parseInt(process.env.DEFAULT_PAGE_SIZE);
         filterParams.search = req.query.search;
+        if(req.query && req.query.branchId){
+            filterParams.branchId = req.query.branchId;
+        }
         let menus = await getMenus(filterParams);
         res.json(menus);
     } catch (e) {
@@ -63,6 +66,7 @@ exports.getMenusAndItems = async (req, res) => {
         filterParams.pageSize = req.query.size;
         if(!filterParams.pageSize) filterParams.pageSize = parseInt(process.env.DEFAULT_PAGE_SIZE);
         filterParams.search = req.query.search;
+        filterParams.branchId = req.query.branchId;
         let menus = await getMenusAndItems(filterParams);
         res.json(menus);
     } catch (e) {

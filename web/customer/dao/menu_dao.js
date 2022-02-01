@@ -1,42 +1,59 @@
 const { query, querySingleResult } = require("../../db");
 
-exports.getMenus = async (filterParams, sortBy = 'sort_order', sortOrder = 'asc') => {
+exports.getMenus = async (filterParams) => {
     let sql = `select m.id, m.title, m.description, m.sort_order as sortOrder, 
-    concat(:fileAccessPath, f.name) as primaryImg, m.is_active as isActive,
+    concat(:fileAccessPath, f.name) as primaryImg, 
+    m.is_active as isActive,
+    if(bm.is_available is null, true, bm.is_available) as isAvailable,
     (select count(i.id) from res_menu_item i where i.menu_id = m.id ) as totalItems
     from res_menu m
     left join file_image f on f.id = m.pri_img_id
+    left join res_branch_menu as bm on bm.menu_id = m.id and bm.branch_id = uuid_to_bin(:branchId) 
     where m.is_active
-    order by ${sortBy} ${sortOrder}`;
+    order by if(bm.sort_order is null, m.sort_order, bm.sort_order)`;
 
     let params = {
-        fileAccessPath: process.env.FILE_STORAGE_READ_PATH
+        fileAccessPath: process.env.FILE_STORAGE_READ_PATH,
+        branchId: filterParams.branchId
     }
+    let menus = await query(sql, params);
 
-    if (filterParams.search) {
-        filterParams.search = `%${filterParams.search}%`
-    }
+    // let branchMenus = [];
+    // if (filterParams.branchId) {
+    //     branchMenus = await query(`select * 
+    //     from res_branch_menu bm
+    //     where bm.branch_id = uuid_to_bin(:branchId)`, { branchId: filterParams.branchId });
+    // }
 
-    let result = await query(sql, params);
-    if (result) {
-        result.forEach(f => f.isActive = !!f.isActive)
+    if (menus) {
+        menus.forEach(f => {
+            f.isActive = !!f.isActive;
+            f.isAvailable = !!f.isAvailable;
+        })
     }
-    return result;
+    return menus;
 }
 
 exports.getMenusAndItems = async (filterParams) => {
     let sql = `select rmi.id, rmi.menu_id, rm.id, rmi.title, rmi.description, rmi.price, rmi.old_price, rmi.pri_img_id,
+    miu.*, 
     rm.id, rm.title, rm.description, rm.pri_img_id,
+    bm.*, bmi.*,
     concat(:fileAccessPath, mf.name) as mPrimaryImg,
     concat(:fileAccessPath, mif.name) as miPrimaryImg
     from res_menu_item rmi 
     join res_menu rm ON rm.id = rmi.menu_id  and rm.is_active 
     left join file_image mf on mf.id = rm.pri_img_id
     left join file_image mif on mif.id = rmi.pri_img_id
-    order by rm.sort_order, rmi.sort_order`;
+    left join res_menu_item_unit miu on miu.id = rmi.unit_id
+    left join res_branch_menu bm on bm.menu_id = rm.id and bm.branch_id = uuid_to_bin(:branchId)
+    left join res_branch_menu_item bmi on bmi.menu_item_id = rmi.id and bmi.branch_id = uuid_to_bin(:branchId)
+    order by if(bm.sort_order is null, rm.sort_order, bm.sort_order),
+    if(bmi.sort_order is null, rmi.sort_order, bmi.sort_order)`;
 
     let params = {
-        fileAccessPath: process.env.FILE_STORAGE_READ_PATH
+        fileAccessPath: process.env.FILE_STORAGE_READ_PATH,
+        branchId: filterParams.branchId
     }
 
     if (filterParams.search) {
@@ -48,14 +65,17 @@ exports.getMenusAndItems = async (filterParams) => {
     // f.isActive = !!f.isActive
     result.forEach(r => {
         let m = menus.find(f => f.id == r.rm.id);
-        if(!m){
+        if (!m) {
             m = r.rm
             m.primaryImg = r[""].mPrimaryImg;
             delete m.pri_img_id
             delete m.menu_id
+
+            m.isAvailable = r.bm.is_available != null ? !!r.bm.is_available : true;
+            
             menus.push(m);
         }
-        if(!m.items){
+        if (!m.items) {
             m.items = []
         }
         r.rmi.primaryImg = r[""].miPrimaryImg;
@@ -65,6 +85,14 @@ exports.getMenusAndItems = async (filterParams) => {
 
         r.rmi.oldPrice = r.rmi.old_price;
         delete r.rmi.old_price
+
+        r.rmi.unit = r.miu.title;
+
+        if(m.isAvailable){
+            r.rmi.isAvailable = r.bmi.is_available != null ? !!r.bmi.is_available : true;
+        } else {
+            r.rmi.isAvailable = false;
+        }
 
         m.items.push(r.rmi)
     })

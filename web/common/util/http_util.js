@@ -58,6 +58,13 @@ module.exports.authenticationResponse = (emailOrUsername, password, user, res) =
                         branchId: user.branchId
                     })
                 };
+
+                if(user.branchId){
+                    _user.branch = {
+                        id: user.branchId, 
+                        name: user.branchName
+                    }
+                }
                 res.send(_user);
                 updateLastLogin(user.id);    
             } else {

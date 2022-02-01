@@ -9,23 +9,21 @@ var { v4: uuidv4 } = require('uuid');
  * @returns {Object}
  */
 exports.getAuthUser = async (username) => {
-    let params = { username: username};
+    let params = { username: username };
     let sql = `select BIN_TO_UUID(u.id) as id, u.username, u.email, u.password, u.enabled, 
     up.profile_picture as profilePicture, u.last_login as lastLogin, ur.role_id as role,
     (case 
         when concat_ws(' ', up.first_name, up.last_name) != '' then concat_ws(' ', up.first_name, up.last_name)
         when u.username is not null then u.username
         else u.email end ) as fullName,
-    (case
-            when rb.id is not null then BIN_TO_UUID(rb.id)
-            when rbs.branch_id is not null then BIN_TO_UUID(rbs.branch_id)
-            else null
-        end ) as branchId        
+    bin_to_uuid(rb.id) as branchId,
+    rb.name as branchName
+    
     from auth_user u
     join auth_user_role ur on ur.user_id = u.id
     left join auth_user_profile up on up.id = u.id
-    left join res_branch rb on rb.manager_id = u.id 
     left join res_branch_salesperson rbs on rbs.salesperson_id = u.id
+    left join res_branch rb on rb.manager_id = u.id or rb.id = rbs.branch_id 
     where u.email = :username or u.username = :username `;
     let user = await querySingleResult(sql, params);
     return user;
@@ -93,7 +91,7 @@ exports.updatePassword = async (id, password) => {
 exports.enabled = async (id, enabled) => {
     let params = {
         id: id,
-        enabled: enabled ? 1:0
+        enabled: enabled ? 1 : 0
     };
     let sql = `update auth_user set enabled = :enabled where id = UUID_TO_BIN(:id);
     select u.enabled from auth_user u where u.id = UUID_TO_BIN(:id)`;

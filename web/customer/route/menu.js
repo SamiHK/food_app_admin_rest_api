@@ -1,4 +1,3 @@
-const { checkSchema } = require('express-validator')
 const { getMenus,
     getMenu,
     getMenuItemsByMenu,
