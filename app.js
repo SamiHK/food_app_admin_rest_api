@@ -10,6 +10,7 @@ var imageRoutes = require('./web/common/route/image');
 var authRoutes = require('./web/common/route/auth');
 var profileRoutes = require('./web/common/route/profile');
 var userRoutes = require('./web/common/route/users');
+var addressRoutes = require('./web/common/route/address')
 
 var adminManagerRoutes = require('./web/admin/route/manager');
 var adminBranchRoutes = require('./web/admin/route/branch');
@@ -46,6 +47,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(`/images`, imageRoutes);
 const base_uri = '/api'
+app.use(`${base_uri}/address`, addressRoutes);
 app.use(`${base_uri}/auth`, authRoutes);
 app.use(`${base_uri}/profile`, authorizedJwtToken, profileRoutes);
 app.use(`${base_uri}/user`, authorizedJwtToken, userRoutes);

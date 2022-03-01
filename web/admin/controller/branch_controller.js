@@ -89,7 +89,7 @@ exports.get = async (req, res) => {
     }
 }
 
-exports.updateLocation = async (req, res) => {
+exports.updateAddress = async (req, res) => {
     const result = validationResult(req);
     if(!result.isEmpty()){
         return res.status(400).send(result);
@@ -97,7 +97,7 @@ exports.updateLocation = async (req, res) => {
         try {
             let id = req.params.id;
             let address = req.body;
-            let resposne = await branchDao.updateLocation(id, address);
+            let resposne = await branchDao.updateAddress(id, address);
             if(resposne && resposne.length == 2)
                 res.send(resposne[1][0]);
             else {
