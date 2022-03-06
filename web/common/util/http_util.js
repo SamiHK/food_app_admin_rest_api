@@ -64,6 +64,25 @@ module.exports.authenticationResponse = (emailOrUsername, password, user, res) =
                         id: user.branchId, 
                         name: user.branchName
                     }
+                    if(user.branchCityId) {
+                        _user.branch.address = {
+                            addressLine1: user.branchAddressLine1,
+                            formattedAddress: user.branchFormattedAddress,
+                            city: {
+                                id: user.branchCityId,
+                                name: user.branchCityName
+                            },
+                            state: {
+                                id: user.branchStateId,
+                                name: user.branchStateName
+                            },
+                            country: {
+                                id: user.branchCountryId,
+                                name: user.branchCountryName,
+                                shortName: user.branchCountryShortName
+                            }
+                        }
+                    }
                 }
                 res.send(_user);
                 updateLastLogin(user.id);    
@@ -119,7 +138,8 @@ exports.getAuthorizedUserFromJwtToken = async(req, res) => {
 }
 
 exports.authorizedJwtToken = async (req, res, next) => {
-    let user = this.getAuthorizedUserFromJwtToken(req, res)
+    let user = await this.getAuthorizedUserFromJwtToken(req, res)
+    res.locals.user = user;
     if(user){
         next()
     }
@@ -151,4 +171,8 @@ exports.authorizedManagerJwtToken = async (req, res, next) => {
 
 exports.authorizedSalespersonJwtToken = async (req, res, next) => {
     this.authorizedRoleJwtToken(req, res, next, 'SALES_PERSON')
+}
+
+exports.authorizedCustomerJwtToken = async (req, res, next) => {
+    this.authorizedRoleJwtToken(req, res, next, 'CUSTOMER')
 }

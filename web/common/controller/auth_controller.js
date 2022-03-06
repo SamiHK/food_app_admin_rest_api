@@ -22,6 +22,23 @@ exports.login = async (req, res) => {
     }
 }
 
+exports.register = async (req, res) => {
+    const result = validationResult(req);
+    if (!result.isEmpty()) {
+        return res.status(400).send(result);
+    } else {
+        try {
+            let results = await authDao.register(req.body, 'CUSTOMER');
+            if(results.length > 1 && results[0].length > 2){
+                let user = await authDao.getAuthUser(req.body.email);
+                authenticationResponse(req.body.username, req.body.password, user, res);
+            }
+        } catch (e) {
+            sendErrorResponse(e, res);
+        }
+    }
+}
+
 exports.forgetPassword = async (req, res) => {
     const result = validationResult(req);
     if (!result.isEmpty()) {

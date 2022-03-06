@@ -41,7 +41,7 @@ exports.userLoginSchema = {
 exports.userRegisterSchema = {
     email: _email,
     password: _password,
-    confirm_password: _confirm_password,
+    confirmPassword: _confirm_password,
 }
 
 exports.managerRegisterSchema = {

@@ -17,13 +17,25 @@ exports.getAuthUser = async (username) => {
         when u.username is not null then u.username
         else u.email end ) as fullName,
     bin_to_uuid(rb.id) as branchId,
-    rb.name as branchName
-    
+    rb.name as branchName,
+    bl.address_line_1 as branchAddressLine1,
+    bl.formatted_address as branchFormattedAddress,
+    bl.city_id as branchCityId,
+    ac.name as branchCityName,
+    ast.id as branchStateId,
+    ast.name as branchStateName,
+    acnt.id as branchCountryId,
+    acnt.name as branchCountryName,
+    acnt.iso3 as branchCountryShortName
     from auth_user u
     join auth_user_role ur on ur.user_id = u.id
     left join auth_user_profile up on up.id = u.id
     left join res_branch_salesperson rbs on rbs.salesperson_id = u.id
     left join res_branch rb on rb.manager_id = u.id or rb.id = rbs.branch_id 
+    left join res_branch_location bl on bl.id = rb.id
+    left join addr_city ac on ac.id = bl.city_id
+    left join addr_state ast on ast.id = ac.state_id
+    left join addr_country acnt on acnt.id = ast.country_id
     where u.email = :username or u.username = :username `;
     let user = await querySingleResult(sql, params);
     return user;
@@ -67,8 +79,9 @@ exports.register = async (user, role) => {
         password: password,
         role: role
     };
-    let sql = `insert into auth_user(id, username, email, password) values (BIN_TO_UUID(:id, 0), :username, :email, :password);
-    insert into auth_user_role (user_id, role_id) values (BIN_TO_UUID(:id, 0), :role)`;
+    let sql = `insert into auth_user(id, username, email, password) values (UUID_TO_BIN(:id), :username, :email, :password);
+    insert into auth_user_role (user_id, role_id) values (UUID_TO_BIN(:id), :role);
+    select au.email from auth_user au where au.id = UUID_TO_BIN(:id)`;
     return mulitpleQuery(sql, params);
 }
 
