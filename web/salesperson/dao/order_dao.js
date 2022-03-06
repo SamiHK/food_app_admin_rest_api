@@ -1,3 +1,4 @@
+const { off } = require("../../../logger");
 const { query, mulitpleQuery } = require("../../db");
 
 exports.create = async (salespersonId, branchId, o) => {
@@ -8,8 +9,8 @@ exports.create = async (salespersonId, branchId, o) => {
     let params = {
         branchId: branchId,
         salespersonId: salespersonId,
-        customerId: o.customer.id,
-        isDelivery: o.isDelivery,
+        customerId: o.customer ? o.customer.id : null,
+        isDelivery: o.isDelivery != undefined || o.isDelivery != null ? true: o.isDelivery,
         items: JSON.stringify(o.items),
         status: o.orderStatus,
         subTotal: o.subTotal,
@@ -27,14 +28,17 @@ exports.get = async (salespersonId, branchId, status) => {
     let sql = `
     select ro.status, count(ro.id) as total 
     from res_order ro
-    where ro.salesperson_id = UUID_TO_BIN(:salespersonId)
+    where (ro.salesperson_id = UUID_TO_BIN(:salespersonId) or ro.salesperson_id is null)
     and ro.branch_id = UUID_TO_BIN(:branchId)
     group by ro.status;
     select ro.id, 
     BIN_TO_UUID(ro.salesperson_id) as salespersonId,
     BIN_TO_UUID(ro.branch_id) as branchId,
     BIN_TO_UUID(ro.customer_id) as customerId,
-    concat_ws(' ', up.first_name, up.last_name) as customerFullName,
+    (case 
+        when concat_ws(' ', up.first_name, up.last_name) != '' then concat_ws(' ', up.first_name, up.last_name)
+        when au.username is not null then au.username
+        else au.email end ) as customerFullName,
     ul.formatted_address as formattedAddress,
     ro.is_delivery as isDelivery,
     ro.sub_total as subTotal,
@@ -42,9 +46,10 @@ exports.get = async (salespersonId, branchId, status) => {
     ro.created_on as createdOn,
     ro.updated_on as updatedOn
     from res_order ro
+    left join auth_user au on au.id = ro.customer_id
     left join auth_user_profile up on up.id = ro.customer_id
     left join auth_user_location ul on ul.id = ro.customer_location_id
-    where ro.salesperson_id = UUID_TO_BIN(:salespersonId)
+    where (ro.salesperson_id = UUID_TO_BIN(:salespersonId) or ro.salesperson_id is null)
     and ro.branch_id = UUID_TO_BIN(:branchId)
     and ro.status = :status
     order by ro.created_on desc, updated_on desc`
@@ -68,9 +73,11 @@ exports.get = async (salespersonId, branchId, status) => {
         let order = {
             ...s["ro"], ...s[""]
         }
-        order.customer = {
-            id: order.customerId,
-            fullName: order.customerFullName
+        if(order.customerId){
+            order.customer = {
+                id: order.customerId,
+                fullName: order.customerFullName
+            }
         }
         if (order.isDelivery) {
             order.address = { ...s["ul"] }

@@ -11,13 +11,11 @@ exports.create = async (customerId, branchId, o) => {
         items: JSON.stringify(o.items),
         status: o.orderStatus,
         subTotal: o.subTotal,
+        isDelivery: true,
         deliveryCharges: o.deliveryCharges
     }
-    if (o.isDelivery && o.address) {
-        params.customerLocationId = o.address.id
-    } else {
-        params.customerLocationId = null
-    }
+    params.customerLocationId = o.address.id
+
     return query(sql, params);
 }
 
@@ -31,6 +29,7 @@ exports.getById = async (id) => {
     ro.is_delivery as isDelivery,
     ro.sub_total as subTotal,
     ro.items as items,
+    ro.status as status,
     ro.created_on as createdOn,
     ro.updated_on as updatedOn
     from res_order ro
