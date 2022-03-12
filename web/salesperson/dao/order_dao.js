@@ -3,18 +3,19 @@ const { query, mulitpleQuery } = require("../../db");
 
 exports.create = async (salespersonId, branchId, o) => {
     let sql = `insert into res_order(branch_id, salesperson_id, customer_id, is_delivery,
-         customer_location_id, items, status, sub_total, delivery_charges) 
+         customer_location_id, items, status, sub_total, delivery_charges, gst) 
     values (UUID_TO_BIN(:branchId), UUID_TO_BIN(:salespersonId), 
-        UUID_TO_BIN(:customerId), :isDelivery, :customerLocationId, :items, :status, :subTotal, :deliveryCharges);`
+        UUID_TO_BIN(:customerId), :isDelivery, :customerLocationId, :items, :status, :subTotal, :deliveryCharges, :gst);`
     let params = {
         branchId: branchId,
         salespersonId: salespersonId,
         customerId: o.customer ? o.customer.id : null,
         isDelivery: o.isDelivery != undefined || o.isDelivery != null ? true: o.isDelivery,
         items: JSON.stringify(o.items),
-        status: o.orderStatus,
+        status: o.status,
         subTotal: o.subTotal,
-        deliveryCharges: o.deliveryCharges
+        deliveryCharges: o.deliveryCharges,
+        gst: o.gst
     }
     if (o.isDelivery && o.address) {
         params.customerLocationId = o.address.id
@@ -42,6 +43,9 @@ exports.get = async (salespersonId, branchId, status) => {
     ul.formatted_address as formattedAddress,
     ro.is_delivery as isDelivery,
     ro.sub_total as subTotal,
+    ro.delivery_charges as deliveryCharges,
+    ro.gst,
+    (ro.sub_total + (ro.sub_total*(ro.gst/100)) + ro.delivery_charges) as total, 
     ro.items as items,
     ro.created_on as createdOn,
     ro.updated_on as updatedOn

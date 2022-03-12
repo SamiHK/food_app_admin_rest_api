@@ -2,17 +2,18 @@ const { query, mulitpleQuery } = require("../../db");
 
 exports.create = async (customerId, branchId, o) => {
     let sql = `insert into res_order(branch_id, customer_id, is_delivery,
-         customer_location_id, items, status, sub_total, delivery_charges) 
+         customer_location_id, items, status, sub_total, delivery_charges, gst) 
     values (UUID_TO_BIN(:branchId), 
-        UUID_TO_BIN(:customerId), :isDelivery, :customerLocationId, :items, :status, :subTotal, :deliveryCharges)`
+        UUID_TO_BIN(:customerId), :isDelivery, :customerLocationId, :items, :status, :subTotal, :deliveryCharges, :gst)`
     let params = {
         branchId: branchId,
         customerId: customerId,
         items: JSON.stringify(o.items),
-        status: o.orderStatus,
+        status: o.status,
         subTotal: o.subTotal,
         isDelivery: true,
-        deliveryCharges: o.deliveryCharges
+        deliveryCharges: o.deliveryCharges,
+        gst: o.gst
     }
     params.customerLocationId = o.address.id
 
@@ -24,16 +25,23 @@ exports.getById = async (id) => {
     BIN_TO_UUID(ro.salesperson_id) as salespersonId,
     BIN_TO_UUID(ro.branch_id) as branchId,
     BIN_TO_UUID(ro.customer_id) as customerId,
-    concat_ws(' ', up.first_name, up.last_name) as customerFullName,
+    (case 
+        when concat_ws(' ', up.first_name, up.last_name) != '' then concat_ws(' ', up.first_name, up.last_name)
+        when au.username is not null then au.username
+        else au.email end ) as customerFullName,
     ul.formatted_address as formattedAddress,
     ro.is_delivery as isDelivery,
     ro.sub_total as subTotal,
+    ro.delivery_charges as deliveryCharges,
+    ro.gst as gst,
+    (ro.sub_total + (ro.sub_total*(ro.gst/100)) + ro.delivery_charges) as total, 
     ro.items as items,
     ro.status as status,
     ro.created_on as createdOn,
     ro.updated_on as updatedOn
     from res_order ro
     left join auth_user_profile up on up.id = ro.customer_id
+    left join auth_user au on au.id = ro.customer_id
     left join auth_user_location ul on ul.id = ro.customer_location_id
     where ro.id = :id`
     let params = {

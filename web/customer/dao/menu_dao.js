@@ -47,18 +47,20 @@ exports.getMenusAndItems = async (filterParams) => {
     left join file_image mif on mif.id = rmi.pri_img_id
     left join res_menu_item_unit miu on miu.id = rmi.unit_id
     left join res_branch_menu bm on bm.menu_id = rm.id and bm.branch_id = uuid_to_bin(:branchId)
-    left join res_branch_menu_item bmi on bmi.menu_item_id = rmi.id and bmi.branch_id = uuid_to_bin(:branchId)
-    order by if(bm.sort_order is null, rm.sort_order, bm.sort_order),
-    if(bmi.sort_order is null, rmi.sort_order, bmi.sort_order)`;
+    left join res_branch_menu_item bmi on bmi.menu_item_id = rmi.id and bmi.branch_id = uuid_to_bin(:branchId)`;
 
     let params = {
         fileAccessPath: process.env.FILE_STORAGE_READ_PATH,
         branchId: filterParams.branchId
     }
 
-    if (filterParams.search) {
-        filterParams.search = `%${filterParams.search}%`
+    if (filterParams.q) {
+        params.q = `%${filterParams.q}%`
+        sql = sql + ' where rm.title like :q or rmi.title like :q '
     }
+
+    sql = sql + ` order by if(bm.sort_order is null, rm.sort_order, bm.sort_order),
+    if(bmi.sort_order is null, rmi.sort_order, bmi.sort_order)`;
 
     let result = await query({ sql: sql, nestTables: true }, params);
     let menus = [];

@@ -1,5 +1,4 @@
 const { sendErrorResponse } = require("../../common/util/http_util");
-const { CustomError } = require("../../errors");
 const { create, get, getById } = require("../dao/order_dao");
 
 

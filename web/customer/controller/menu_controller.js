@@ -65,7 +65,7 @@ exports.getMenusAndItems = async (req, res) => {
         if(!filterParams.pageNumber) filterParams.pageNumber = 0;
         filterParams.pageSize = req.query.size;
         if(!filterParams.pageSize) filterParams.pageSize = parseInt(process.env.DEFAULT_PAGE_SIZE);
-        filterParams.search = req.query.search;
+        filterParams.q = req.query.q;
         filterParams.branchId = req.query.branchId;
         let menus = await getMenusAndItems(filterParams);
         res.json(menus);
