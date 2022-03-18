@@ -12,8 +12,9 @@ const { sendErrorResponse } = require('./common/util/http_util');
 var fileNameFn = (req, file, cb) => {
     crypto.randomBytes(16, function (err, raw) {
         file.id = raw.toString('hex');
+        // file.id = raw.toString('hex');
         let splitFileOriginalName = file.originalname.split(".");
-        cb(err, err ? undefined : `${raw.toString('hex')}.${splitFileOriginalName[splitFileOriginalName.length-1]}`);
+        cb(err, err ? undefined : `${file.id}.${splitFileOriginalName[splitFileOriginalName.length-1]}`);
     })
 };
 

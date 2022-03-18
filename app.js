@@ -21,6 +21,7 @@ var adminMenuItemUnitRoutes = require('./web/admin/route/menu_item_units');
 
 var managerMenuRoutes = require('./web/manager/route/menu');
 var managerSalespersonRoutes = require('./web/manager/route/salesperson');
+var managerOrderRoutes = require('./web/manager/route/order');
 
 var salesPersonMenuRoutes = require('./web/salesperson/route/menu');
 var salesPersonCustomerRoutes = require('./web/salesperson/route/customer');
@@ -65,6 +66,7 @@ app.use(`${base_uri}/admin/menuItemUnit`, authorizedAdminJwtToken, adminMenuItem
 
 app.use(`${base_uri}/manager/menu`, authorizedManagerJwtToken, managerMenuRoutes);
 app.use(`${base_uri}/manager/salesperson`, authorizedManagerJwtToken, managerSalespersonRoutes);
+app.use(`${base_uri}/manager/order`, authorizedManagerJwtToken, managerOrderRoutes);
 
 app.use(`${base_uri}/salesperson/menu`, authorizedSalespersonJwtToken, salesPersonMenuRoutes);
 app.use(`${base_uri}/salesperson/customer`, authorizedSalespersonJwtToken, salesPersonCustomerRoutes);

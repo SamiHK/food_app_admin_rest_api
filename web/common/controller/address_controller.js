@@ -38,7 +38,7 @@ exports.getCities = async (req, res) => {
 
 exports.saveCustomerAddress = async (req, res) => {
     try {
-        let result = await saveCustomerAddress(req.params.customerId, req.body);
+        let result = await saveUserAddress(req.params.customerId, req.body);
         if (result && result.length > 1)
             res.json(result[0][1])
         else
