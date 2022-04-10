@@ -91,11 +91,7 @@ exports.salesperson = async (options, orderByProp = 'fullName', order = 'asc') =
     join res_branch_salesperson bs on bs.branch_id = UUID_TO_BIN(:branchId) and bs.salesperson_id = su.id
     ${whereClause};
     select BIN_TO_UUID(su.id) as id, su.username, su.email, su.enabled, su.last_login as lastLogin,
-    (case
-        when concat(sup.first_name, ' ', sup.last_name) is not null then concat(sup.first_name, ' ', sup.last_name)
-        when su.username is not null then su.username
-        else su.email 
-    end) as fullName
+    concat(sup.first_name, ' ', sup.last_name) as fullName
     from auth_user su
     join auth_user_role sur on sur.user_id = su.id and sur.role_id = 'SALES_PERSON'
     left join auth_user_profile sup on sup.id = su.id

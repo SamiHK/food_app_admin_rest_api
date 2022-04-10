@@ -13,19 +13,10 @@ exports.get = async () => {
     where as2.setting_id is not null`;
     let appsetting = {}
     let results = await query(sql);
-    // results.forEach(r => {
-    //     let setting = appsetting[r.settingKey];
-    //     if (setting) {
-    //         for (key, value in r) {
-    //             setting.settings.push({
-    //                 key: value
-    //             })
-    //         }
-    //     } else {
-
-    //     }
-    // });
-    // appsetting[results]
     return results;
 }
+
+
+
+
 

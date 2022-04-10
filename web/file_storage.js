@@ -10,6 +10,8 @@ var crypto = require('crypto');
 const { sendErrorResponse } = require('./common/util/http_util');
 
 var fileNameFn = (req, file, cb) => {
+    console.log(req);
+    console.log(file);
     crypto.randomBytes(16, function (err, raw) {
         file.id = raw.toString('hex');
         // file.id = raw.toString('hex');
